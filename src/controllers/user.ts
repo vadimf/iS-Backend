@@ -1,5 +1,6 @@
 import * as express from "express";
 import {ForeignUserStub, LoggedUserStub} from "../models/user";
+import {Pagination} from "../models/pagination";
 
 const router = express.Router();
 
@@ -81,6 +82,90 @@ router.delete("/", (req: express.Request, res: express.Response) => {
 
 
 /**
+ * @api {get} /user/following Followed by me
+ * @apiName FollowedByMe
+ * @apiGroup User
+ *
+ * @apiParam {int} page Page
+ *
+ * @apiSuccess {User[]}     users Foreign user object
+ * @apiSuccess {String}         users.username Username
+ * @apiSuccess {Profile}        users.profile User's profile metadata
+ * @apiSuccess {String}             users.profile.firstName First name
+ * @apiSuccess {String}             users.profile.lastName Last name
+ * @apiSuccess {Object}             users.profile.picture User's profile picture
+ * @apiSuccess {String}                 users.profile.picture.url Url
+ * @apiSuccess {String}                 users.profile.picture.thumbnail Thumbnail url
+ * @apiSuccess {int}            users.following Following counter
+ * @apiSuccess {int}            users.followers Followers counter
+ *
+ * @apiSuccess {Pagination}     pagination Pagination object
+ * @apiSuccess {int}                pagination.page Current page
+ * @apiSuccess {int}                pagination.pages Total pages
+ * @apiSuccess {int}                pagination.results Total results
+ * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
+ * @apiSuccess {int}                pagination.offset Start offset
+ */
+router.get("/following", (req: express.Request, res: express.Response) => {
+    res.response();
+});
+
+
+/**
+ * @api {get} /user/following Following me
+ * @apiName FollowingMe
+ * @apiGroup User
+ *
+ * @apiParam {int} page Page
+ *
+ * @apiSuccess {User[]}     users Foreign user object
+ * @apiSuccess {String}         users.username Username
+ * @apiSuccess {Profile}        users.profile User's profile metadata
+ * @apiSuccess {String}             users.profile.firstName First name
+ * @apiSuccess {String}             users.profile.lastName Last name
+ * @apiSuccess {Object}             users.profile.picture User's profile picture
+ * @apiSuccess {String}                 users.profile.picture.url Url
+ * @apiSuccess {String}                 users.profile.picture.thumbnail Thumbnail url
+ * @apiSuccess {int}            users.following Following counter
+ * @apiSuccess {int}            users.followers Followers counter
+ *
+ * @apiSuccess {Pagination}     pagination Pagination object
+ * @apiSuccess {int}                pagination.page Current page
+ * @apiSuccess {int}                pagination.pages Total pages
+ * @apiSuccess {int}                pagination.results Total results
+ * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
+ * @apiSuccess {int}                pagination.offset Start offset
+ */
+router.get("/followers", (req: express.Request, res: express.Response) => {
+    const pagination = new Pagination();
+    pagination.page = 1;
+    pagination.results = 3;
+    pagination.resultsPerPage = 50;
+    pagination.resultsCurrentPage = 3;
+    pagination.pages = 1;
+
+    res.response({
+        users: [ForeignUserStub, ForeignUserStub, ForeignUserStub],
+        pagination: pagination
+    });
+});
+
+
+/**
+ * @api {get} /user/posts My posts
+ * @apiName MyPosts
+ * @apiGroup User
+ *
+ * @apiParam {String} vars Not ready yet...
+ *
+ * @apiSuccess {String} vars Not ready yet...
+ */
+router.get("/posts", (req: express.Request, res: express.Response) => {
+    res.response();
+});
+
+
+/**
  * @api {get} /user/:username Get user details
  * @apiName GetUser
  * @apiGroup User
@@ -110,6 +195,7 @@ router.get("/:username", (req: express.Request, res: express.Response) => {
  *
  * @apiSuccess {String} vars Not ready yet...
  */
+// TODO: Prepare report reason enum
 router.post("/:username/report", (req: express.Request, res: express.Response) => {
     res.response();
 });
@@ -136,20 +222,6 @@ router.delete("/:username/follow", (req: express.Request, res: express.Response)
 
 
 /**
- * @api {get} /user/following Followed by me
- * @apiName FollowedByMe
- * @apiGroup User
- *
- * @apiParam {String} vars Not ready yet...
- *
- * @apiSuccess {String} vars Not ready yet...
- */
-router.get("/following", (req: express.Request, res: express.Response) => {
-    res.response();
-});
-
-
-/**
  * @api {get} /user/:username/following Followed by user
  * @apiName FollowedByUser
  * @apiGroup User
@@ -159,20 +231,6 @@ router.get("/following", (req: express.Request, res: express.Response) => {
  * @apiSuccess {String} vars Not ready yet...
  */
 router.get("/:username/following", (req: express.Request, res: express.Response) => {
-    res.response();
-});
-
-
-/**
- * @api {get} /user/following Following me
- * @apiName FollowingMe
- * @apiGroup User
- *
- * @apiParam {String} vars Not ready yet...
- *
- * @apiSuccess {String} vars Not ready yet...
- */
-router.get("/followers", (req: express.Request, res: express.Response) => {
     res.response();
 });
 
@@ -192,20 +250,6 @@ router.get("/:username/followers", (req: express.Request, res: express.Response)
 
 
 /**
- * @api {get} /user/posts My posts
- * @apiName MyPosts
- * @apiGroup User
- *
- * @apiParam {String} vars Not ready yet...
- *
- * @apiSuccess {String} vars Not ready yet...
- */
-router.get("/posts", (req: express.Request, res: express.Response) => {
-    res.response();
-});
-
-
-/**
  * @api {get} /user/:username/posts User's posts
  * @apiName UserPosts
  * @apiGroup User
@@ -217,5 +261,6 @@ router.get("/posts", (req: express.Request, res: express.Response) => {
 router.get("/:username/posts", (req: express.Request, res: express.Response) => {
     res.response();
 });
+
 
 export default router;
