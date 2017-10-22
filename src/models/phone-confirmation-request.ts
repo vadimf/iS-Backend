@@ -1,5 +1,5 @@
 import * as mongoose from "mongoose";
-import {IPhoneNumber} from './phone-number';
+import {IPhoneNumber} from "./phone-number";
 
 // export type IPhoneConfirmationRequest2 = mongoose.Document & {
 //     country: string

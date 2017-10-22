@@ -13,7 +13,9 @@ export const ProfileSchema = new mongoose.Schema(
     {
         firstName: String,
         lastName: String,
-        picture: UserPictureSchema,
+        picture: {
+            type: UserPictureSchema
+        },
         bio: String
     },
     {
@@ -101,7 +103,9 @@ export const UserSchema = new mongoose.Schema(
             unique: true,
             index: true
         },
-        profile: ProfileSchema
+        profile: {
+            type: ProfileSchema
+        }
     },
     {
         timestamps: true
