@@ -132,12 +132,15 @@ import {default as FeedRouter} from "./controllers/feed";
 import {default as SearchRouter} from "./controllers/search";
 import {default as PostRouter} from "./controllers/post";
 import {default as CommentRouter} from "./controllers/comment";
+import {default as DiscoverRouter} from "./controllers/discover";
+import {default as SystemRouter} from "./controllers/system";
 
 
 /**
  * Primary app routes.
  */
 app.use("/v1/auth", AuthRouter);
+app.use("/v1/system", SystemRouter);
 
 // Protected requests
 // TODO: Add authentication middleware to all of the routes below
@@ -147,6 +150,7 @@ app.use("/v1/feed", FeedRouter);
 app.use("/v1/search", SearchRouter);
 app.use("/v1/post", PostRouter);
 app.use("/v1/comment", CommentRouter);
+app.use("/v1/discover", DiscoverRouter);
 
 
 /**

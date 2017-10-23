@@ -1,8 +1,64 @@
 export class Pagination {
-    page: number = 1;
-    pages: number = 0;
-    results: number = 0;
-    resultsPerPage: number = 50;
-    resultsCurrentPage: number = 0;
-    offset: number = 0;
+    private _page: number = 1;
+    private _results: number = 0;
+    private _resultsPerPage: number = 50;
+
+
+    constructor(page: number, results: number, resultsPerPage: number = 25) {
+        this._page = page;
+        this._results = results;
+        this._resultsPerPage = resultsPerPage;
+    }
+
+    get page(): number {
+        if ( this._page < 1 ) {
+            return 1;
+        }
+
+        return this._page;
+    }
+
+    get results(): number {
+        return this._results;
+    }
+
+    get resultsPerPage(): number {
+        return this._resultsPerPage;
+    }
+
+    get pages(): number {
+        if ( ! this.results || ! this.resultsPerPage ) {
+            return 0;
+        }
+
+        return Math.ceil(this.results / this.resultsPerPage );
+    }
+
+    get resultsCurrentPage(): number {
+        if ( ! this.results || this.page > this.pages ) {
+            return 0;
+        }
+
+        if ( this.page == this.pages ) {
+            return this.results - (this.resultsPerPage * (this.pages - 1));
+        }
+
+        return this.resultsPerPage;
+    }
+
+    get offset(): number {
+        const currentPage = this.page > 0 ? this.page - 1 : 0;
+        return this.resultsPerPage * currentPage;
+    }
+
+    public toJSON() {
+        return {
+            page: this.page,
+            pages: this.pages,
+            results: this.results,
+            resultsPerPage: this.resultsPerPage,
+            resultsCurrentPage: this.resultsCurrentPage,
+            offset: this.offset
+        };
+    }
 }

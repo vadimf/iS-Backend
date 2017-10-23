@@ -3,5 +3,31 @@
   "version": "0.0.0",
   "description": "Restful API documentation for iSay Application - Globalbit soft LTD",
   "title": "iSay API Documentation",
-  "url" : "http://localhost:3000"
+  "url" : "http://localhost:3000/v1",
+  "order": [
+    "Authentication",
+      "StartAuth",
+      "CompleteAuth",
+      "SignOut",
+    "User",
+      "GetMyUser",
+      "UpdateMyUser",
+      "MyPosts",
+      "FollowedByMe",
+      "FollowingMe",
+      "GetUser",
+      "UserPosts",
+      "FollowedByUser",
+      "FollowingUser",
+      "FollowUser",
+      "UnfollowUser",
+      "ReportUser",
+      "DisableMyUser",
+    "Feed",
+    "Post",
+      "CreatePost",
+      "GetPost",
+      "EditPost",
+      "RemovePost"
+  ]
 }

@@ -90,8 +90,10 @@ router.post("/phone/request", (req: express.Request, res: express.Response) => {
  * @apiSuccess {Object}             user.profile.picture User's profile picture
  * @apiSuccess {String}                 user.profile.picture.url Url
  * @apiSuccess {String}                 user.profile.picture.thumbnail Thumbnail url
+ * @apiSuccess {String}             user.profile.bio Bio text
  * @apiSuccess {int}            user.following Following counter
  * @apiSuccess {int}            user.followers Followers counter
+ * @apiSuccess {String}         user.createdAt Date registered
  * @apiSuccess {String}     auth Authentication token to send in header
  */
 router.post("/phone/verify", (req: express.Request, res: express.Response) => {

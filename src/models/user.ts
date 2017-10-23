@@ -68,6 +68,7 @@ export interface ILoggedUser {
     profile: IUserProfile;
     followers: Number;
     following: Number;
+    createdAt: Date;
 }
 
 
@@ -76,6 +77,8 @@ export interface IForeignUser {
     profile: IUserProfile;
     followers: Number;
     following: Number;
+    isFollowing: boolean;
+    createdAt: Date;
 }
 
 export const UserSchema = new mongoose.Schema(
@@ -118,7 +121,8 @@ UserSchema.methods.toLoggedUser = function(): ILoggedUser {
         phone: this.phone,
         profile: this.profile,
         followers: 0,
-        following: 0
+        following: 0,
+        createdAt: this.createdAt
     };
 };
 UserSchema.methods.toForeignUser = function(): IForeignUser {
@@ -126,11 +130,14 @@ UserSchema.methods.toForeignUser = function(): IForeignUser {
         username: this.username,
         profile: this.profile,
         followers: 0,
-        following: 0
+        following: 0,
+        isFollowing: false,
+        createdAt: this.createdAt
     };
 };
 
 
+const CreatedAtDateStub = new Date("2017-10-17T08:20:38.339Z");
 
 
 export const LoggedUserStub: ILoggedUser = {
@@ -151,7 +158,8 @@ export const LoggedUserStub: ILoggedUser = {
         "bio": "Hello, It's me :)"
     },
     "followers": 0,
-    "following": 0
+    "following": 0,
+    "createdAt": CreatedAtDateStub
 };
 
 export const ForeignUserStub: IForeignUser = {
@@ -166,7 +174,9 @@ export const ForeignUserStub: IForeignUser = {
         "bio": "Hello, It's me :)"
     },
     "followers": 0,
-    "following": 0
+    "following": 0,
+    "isFollowing": false,
+    "createdAt": CreatedAtDateStub
 };
 
 
