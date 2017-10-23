@@ -134,6 +134,7 @@ import {default as PostRouter} from "./controllers/post";
 import {default as CommentRouter} from "./controllers/comment";
 import {default as DiscoverRouter} from "./controllers/discover";
 import {default as SystemRouter} from "./controllers/system";
+import {isAuthenticated} from "./config/passport";
 
 
 /**
@@ -145,7 +146,7 @@ app.use("/v1/system", SystemRouter);
 // Protected requests
 // TODO: Add authentication middleware to all of the routes below
 app.use("/v1/notifications", NotificationsRouter);
-app.use("/v1/user", UserRouter);
+app.use("/v1/user", isAuthenticated, UserRouter);
 app.use("/v1/feed", FeedRouter);
 app.use("/v1/search", SearchRouter);
 app.use("/v1/post", PostRouter);

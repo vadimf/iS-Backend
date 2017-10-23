@@ -2,9 +2,12 @@
 /// <reference types="express" />
 
 // Add RequestValidation Interface on to Express's Request Interface.
+
 declare namespace Express {
     interface Request extends Flash {
         performValidation(): boolean;
+        /** @var IUserModel */
+        user?: any;
     }
     interface Response {
         error?: any;
@@ -16,5 +19,5 @@ interface Flash {
     flash(type: string, message: any): void;
 }
 
-declare module 'express-flash';
+declare module "express-flash";
 

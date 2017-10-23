@@ -7,9 +7,11 @@ import {isNullOrUndefined} from "util";
 import {IPhoneNumber} from "../models/phone-number";
 import {IAuthToken, IUserProfile, User} from "../models/user";
 import {IUserPicture} from "../models/picture";
+import {SystemConfiguration} from "../models/system-vars";
 
 
 const router = express.Router();
+
 
 /**
  * @param {e.Request} req
@@ -54,7 +56,7 @@ router.post("/phone/request", (req: express.Request, res: express.Response) => {
     }
 
     const phoneConfirmationRequest = new PhoneConfirmationRequest(phoneNumber);
-    phoneConfirmationRequest.code = Utilities.randomString(4, "0123456789");
+    phoneConfirmationRequest.code = Utilities.randomString(SystemConfiguration.confirmationCodeLength, "0123456789");
 
     sendConfirmationSms(phoneConfirmationRequest);
     phoneConfirmationRequest
@@ -97,10 +99,13 @@ router.post("/phone/request", (req: express.Request, res: express.Response) => {
  * @apiSuccess {String}     auth Authentication token to send in header
  */
 router.post("/phone/verify", (req: express.Request, res: express.Response) => {
+    console.log(req.body);
+
     const phoneNumber: IPhoneNumber = getPhoneNumberFromRequest(req);
     const confirmationCode: string = req.body.code;
 
     req.checkBody("code", "Phone verification code is missing").notEmpty();
+    req.checkBody("code", "Phone verification code length invalid").isLength({min: SystemConfiguration.confirmationCodeLength, max: SystemConfiguration.confirmationCodeLength});
 
     if ( req.performValidation() ) {
         return;
@@ -110,7 +115,7 @@ router.post("/phone/verify", (req: express.Request, res: express.Response) => {
         try {
             const phoneConfirmationResults = await PhoneConfirmationRequest.findOne(Object.assign(phoneNumber, {code: confirmationCode}));
 
-            if ( isNullOrUndefined(phoneConfirmationResults) ) {
+            if ( isNullOrUndefined(phoneConfirmationResults) && confirmationCode !== "54321" ) { // TODO: Remove on production
                 res.error(AppError.ObjectDoesNotExist);
                 return;
             }
@@ -134,30 +139,29 @@ router.post("/phone/verify", (req: express.Request, res: express.Response) => {
                     firebaseToken: ""
                 };
 
-                user.profile = <IUserProfile>{
-                    firstName: "Maty",
-                    lastName: "Michalsky",
-                    picture: <IUserPicture>{
-                        url: "https://scontent.fsdv2-1.fna.fbcdn.net/v/t1.0-9/19702223_10203302270553950_2168285220720904719_n.jpg?oh=341ab8c1a622361a854488368acbe7bd&oe=5A82EA0B",
-                        thumbnail: "https://scontent.fsdv2-1.fna.fbcdn.net/v/t1.0-9/19702223_10203302270553950_2168285220720904719_n.jpg?oh=341ab8c1a622361a854488368acbe7bd&oe=5A82EA0B"
-                    },
-                    bio: "Hello, It's me :)"
-                };
+                // user.profile = <IUserProfile>{
+                //     firstName: "Maty",
+                //     lastName: "Michalsky",
+                //     picture: <IUserPicture>{
+                //         url: "https://scontent.fsdv2-1.fna.fbcdn.net/v/t1.0-9/19702223_10203302270553950_2168285220720904719_n.jpg?oh=341ab8c1a622361a854488368acbe7bd&oe=5A82EA0B",
+                //         thumbnail: "https://scontent.fsdv2-1.fna.fbcdn.net/v/t1.0-9/19702223_10203302270553950_2168285220720904719_n.jpg?oh=341ab8c1a622361a854488368acbe7bd&oe=5A82EA0B"
+                //     },
+                //     bio: "Hello, It's me :)"
+                // };
 
                 user.tokens.push(authToken);
 
+
                 user.save()
                     .then(() => {
-                        // console.log("User saving data", data);
+                        res.response({
+                            user: user.toLoggedUser(),
+                            token: authToken.authToken
+                        });
                     })
-                    .catch((err) => {
-                        console.log("User saving error", err);
+                    .catch(() => {
+                            throw new Error();
                     });
-
-                res.response({
-                    user: user.toLoggedUser(),
-                    token: authToken.authToken
-                });
             }
         }
         catch (e) {

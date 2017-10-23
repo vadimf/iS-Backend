@@ -119,7 +119,7 @@ UserSchema.methods.toLoggedUser = function(): ILoggedUser {
         username: this.username,
         email: this.email,
         phone: this.phone,
-        profile: this.profile,
+        profile: <IUserProfile>this.profile,
         followers: 0,
         following: 0,
         createdAt: this.createdAt

@@ -43,6 +43,11 @@ export class AppError {
      */
     static ObjectDoesNotExist = new AppError(StatusCode.NotFound, 200, "Object doesn't exist");
     /**
+     * @apiDefine ErrorPerformingAction
+     * @apiError 100 The requested action could not be completed
+     */
+    static NotAuthenticated = new AppError(StatusCode.Unauthorized, 300, "Not authenticated/authorized");
+    /**
      * @apiDefine RequestValidation
      * @apiError 500 The requested couldn't be completed due to insufficient permissions, or lack of authentication
      */

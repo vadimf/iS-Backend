@@ -1,5 +1,5 @@
 import * as express from "express";
-import {SystemVarsStub} from "../models/system-vars";
+import {SystemConfiguration, SystemVarsStub} from "../models/system-vars";
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ const router = express.Router();
  */
 router.get("/", (req: express.Request, res: express.Response) => {
     res.response({
-        vars: SystemVarsStub
+        vars: SystemConfiguration.toJson()
     });
 });
 

@@ -30,7 +30,7 @@ const router = express.Router();
  * @apiSuccess {String}         user.createdAt Date registered
  */
 router.get("/", (req: express.Request, res: express.Response) => {
-    res.response({user: LoggedUserStub});
+    res.response({user: req.user.toLoggedUser()});
 });
 
 
@@ -70,7 +70,7 @@ router.get("/", (req: express.Request, res: express.Response) => {
  * @apiSuccess {String}         user.createdAt Date registered
  */
 router.patch("/", (req: express.Request, res: express.Response) => {
-    res.response({user: LoggedUserStub});
+    res.response({user: req.user.toLoggedUser()});
 });
 
 
