@@ -2,6 +2,9 @@ import * as express from "express";
 import {ForeignUserStub, LoggedUserStub} from "../models/user";
 import {Pagination} from "../models/pagination";
 import {postsWithPaginationResponseStub} from "../models/post";
+import {SystemConfiguration} from "../models/system-vars";
+import {Utilities} from "../utilities/Utilities";
+import {isNullOrUndefined} from "util";
 
 const router = express.Router();
 
@@ -70,6 +73,77 @@ router.get("/", (req: express.Request, res: express.Response) => {
  * @apiSuccess {String}         user.createdAt Date registered
  */
 router.patch("/", (req: express.Request, res: express.Response) => {
+    if ( req.body.user.username ) {
+        req.checkBody({
+            "user[username]": {
+                matches: {
+                    options: Utilities.stringToRegExp(SystemConfiguration.validations.username.regex),
+                    errorMessage: "Username doesn't match regex"
+                },
+                isLength: {
+                    options: [{
+                        min: SystemConfiguration.validations.username.minLength,
+                        max: SystemConfiguration.validations.username.maxLength
+                    }],
+                    errorMessage: "Username length is invalid"
+                }
+            }
+        });
+
+        // TODO: Validate uniqueness
+
+        req.user.username = req.body.user.username;
+    }
+
+
+    if ( req.body.user.email ) {
+        req.checkBody({
+            "user[email]": {
+                isEmail: {
+                    errorMessage: "Email is invalid"
+                }
+            }
+        });
+
+        req.user.email = req.body.user.email;
+    }
+
+
+    if ( ! req.user.profile ) {
+        req.user.profile = {};
+    }
+
+
+    if ( req.body.user.profile ) {
+        if ( req.body.user.profile.firstName ) {
+            req.checkBody({
+                "user[profile][firstName]": {
+                    matches: {
+                        options: Utilities.stringToRegExp(SystemConfiguration.validations.firstName.regex),
+                        errorMessage: "First-name doesn't match regex"
+                    },
+                    isLength: {
+                        options: [{
+                            min: SystemConfiguration.validations.firstName.minLength,
+                            max: SystemConfiguration.validations.firstName.maxLength
+                        }],
+                        errorMessage: "First-name length is invalid"
+                    }
+                }
+            });
+
+            req.user.profile.firstName = req.body.user.profile.firstName;
+        }
+    }
+
+    if ( req.performValidation() ) {
+        return;
+    }
+
+    if ( req.user.isModified() ) {
+        req.user.save();
+    }
+
     res.response({user: req.user.toLoggedUser()});
 });
 

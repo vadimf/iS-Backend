@@ -8,4 +8,11 @@ export class Utilities {
 
         return text;
     }
+
+    static stringToRegExp(str: string): RegExp {
+        const flags = str.replace(/.*\/([gimy]*)$/, "$1");
+        const pattern = str.replace(new RegExp("^/(.*?)/" + flags + "$"), "$1");
+
+        return new RegExp(pattern, flags);
+    }
 }

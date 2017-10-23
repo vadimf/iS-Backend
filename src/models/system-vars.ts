@@ -7,29 +7,46 @@ export const SystemVarsStub = {
     }
 };
 
-class StaticPagesUrl {
-    about               = "http://www.globalbit.co.il/";
-    privacy             = "http://www.globalbit.co.il/";
-    terms               = "http://www.globalbit.co.il/";
-    libraries           = "http://www.globalbit.co.il/";
-}
+const StaticPages = {
+    about               : "http://www.globalbit.co.il/",
+    privacy             : "http://www.globalbit.co.il/",
+    terms               : "http://www.globalbit.co.il/",
+    libraries           : "http://www.globalbit.co.il/"
+};
+
+const UsernameValidation = {
+    minLength           : 4,
+    maxLength           : 16,
+    regex               : "/^[a-z0-9_.]+$/i"
+};
+
+const FirstNameValidation = {
+    minLength           : 4,
+    maxLength           : 16,
+    regex               : "/\\b[^\\d\\W]+\\b/"
+};
 
 export class SystemConfiguration {
-    private static _pages = new StaticPagesUrl();
-    private static _confirmationCodeLength = 5;
-
-    static get pages(): StaticPagesUrl {
-        return this._pages;
+    static get pages() {
+        return StaticPages;
     }
 
     static get confirmationCodeLength(): number {
-        return this._confirmationCodeLength;
+        return 5;
+    }
+
+    static get validations() {
+        return {
+            username: UsernameValidation,
+            firstName: FirstNameValidation
+        };
     }
 
     static toJson() {
         return {
             pages: SystemConfiguration.pages,
-            confirmationCodeLength: SystemConfiguration.confirmationCodeLength
+            confirmationCodeLength: SystemConfiguration.confirmationCodeLength,
+            validations: SystemConfiguration.validations
         };
     }
 }
