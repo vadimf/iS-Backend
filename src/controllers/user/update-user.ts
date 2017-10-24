@@ -202,8 +202,8 @@ function updateProfileImage(req: express.Request) {
 }
 
 function updateUsername(req: express.Request) {
-    return new Promise((resolve, reject) => {
-        if ( req.body.user.username ) {
+    if ( req.body.user.username ) {
+        return new Promise((resolve, reject) => {
             req.checkBody({
                 "user[username]": {
                     matches: {
@@ -224,16 +224,16 @@ function updateUsername(req: express.Request) {
 
             User.findOne({username: username})
                 .then((data) => {
-                    if ( data && ! data._id.equals(req.user._id) ) {
-                        return reject(AppError.UsernameAlreadyTaken);
+                    if (data && !data._id.equals(req.user._id)) {
+                        reject(AppError.UsernameAlreadyTaken);
                     }
 
                     req.user.username = username;
-                    return resolve();
+                    resolve();
                 })
                 .catch(() => {
-                    return reject(AppError.ErrorPerformingAction);
+                    reject(AppError.ErrorPerformingAction);
                 });
-        }
-    });
+        });
+    }
 }
