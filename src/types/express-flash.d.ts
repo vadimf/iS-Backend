@@ -5,7 +5,7 @@
 
 declare namespace Express {
     interface Request extends Flash {
-        performValidation(): boolean;
+        requestInvalid(): boolean;
         /** @var IUserModel */
         user?: any;
     }

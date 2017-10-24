@@ -1,7 +1,7 @@
 import * as express from "express";
-import {Pagination} from "../models/pagination";
-import {ForeignUserStub} from "../models/user";
-import {postsWithPaginationResponseStub} from "../models/post";
+import {Pagination} from "../../models/pagination";
+import {ForeignUserStub} from "../../models/user";
+import {postsWithPaginationResponseStub} from "../../models/post";
 
 const router = express.Router();
 

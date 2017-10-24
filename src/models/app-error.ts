@@ -52,4 +52,27 @@ export class AppError {
      * @apiError 500 The requested couldn't be completed due to insufficient permissions, or lack of authentication
      */
     static RequestValidation = new AppError(StatusCode.BadRequest, 500, "Request validation error");
+    /**
+     * @apiDefine UsernameAlreadyTaken
+     * @apiError 1000 Username is already in use
+     */
+    static UsernameAlreadyTaken = new AppError(StatusCode.Conflict, 1000, "Username is already in use");
+    /**
+     * @apiDefine UploadingError
+     * @apiError 2000 Uploading error
+     */
+    static UploadingError = new AppError(StatusCode.Forbidden, 2000, "Uploading error");
+}
+
+export class ApiException extends Error {
+    private _error: AppError;
+
+    constructor(error: AppError) {
+        super(error.errorDescription);
+        this._error = error;
+    }
+
+    get error(): AppError {
+        return this._error;
+    }
 }

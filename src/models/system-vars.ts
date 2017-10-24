@@ -26,6 +26,16 @@ const FirstNameValidation = {
     regex               : "/\\b[^\\d\\W]+\\b/"
 };
 
+const LastNameValidation = {
+    minLength           : 4,
+    maxLength           : 16,
+    regex               : "/\\b[^\\d\\W]+\\b/"
+};
+
+const BioValidation = {
+    maxLength           : 250
+};
+
 export class SystemConfiguration {
     static get pages() {
         return StaticPages;
@@ -38,7 +48,9 @@ export class SystemConfiguration {
     static get validations() {
         return {
             username: UsernameValidation,
-            firstName: FirstNameValidation
+            firstName: FirstNameValidation,
+            lastName: LastNameValidation,
+            bio: BioValidation
         };
     }
 

@@ -1,13 +1,13 @@
 import * as express from "express";
 import twilio = require("twilio");
-import {AppError} from "../models/app-error";
-import {default as PhoneConfirmationRequest, IPhoneConfirmationRequest} from "../models/phone-confirmation-request";
-import {Utilities} from "../utilities/Utilities";
+import {AppError} from "../../models/app-error";
+import {default as PhoneConfirmationRequest, IPhoneConfirmationRequest} from "../../models/phone-confirmation-request";
+import {Utilities} from "../../utilities/utilities";
 import {isNullOrUndefined} from "util";
-import {IPhoneNumber} from "../models/phone-number";
-import {IAuthToken, IUserProfile, User} from "../models/user";
-import {IUserPicture} from "../models/picture";
-import {SystemConfiguration} from "../models/system-vars";
+import {IPhoneNumber} from "../../models/phone-number";
+import {IAuthToken, IUserProfile, User} from "../../models/user";
+import {IUserPicture} from "../../models/picture";
+import {SystemConfiguration} from "../../models/system-vars";
 
 
 const router = express.Router();
@@ -51,7 +51,7 @@ function sendConfirmationSms(phoneConfirmationRequest: IPhoneConfirmationRequest
 router.post("/phone/request", (req: express.Request, res: express.Response) => {
     const phoneNumber: IPhoneNumber = getPhoneNumberFromRequest(req);
 
-    if ( req.performValidation() ) {
+    if ( req.requestInvalid() ) {
         return;
     }
 
@@ -107,7 +107,7 @@ router.post("/phone/verify", (req: express.Request, res: express.Response) => {
     req.checkBody("code", "Phone verification code is missing").notEmpty();
     req.checkBody("code", "Phone verification code length invalid").isLength({min: SystemConfiguration.confirmationCodeLength, max: SystemConfiguration.confirmationCodeLength});
 
-    if ( req.performValidation() ) {
+    if ( req.requestInvalid() ) {
         return;
     }
 
@@ -120,6 +120,10 @@ router.post("/phone/verify", (req: express.Request, res: express.Response) => {
                 return;
             }
             else {
+                // if ( phoneConfirmationResults ) {
+                //     phoneConfirmationResults.remove();
+                // }
+
                 const findByArguments = {
                     "phone.country": phoneNumber.country,
                     "phone.area": phoneNumber.area,
@@ -159,8 +163,8 @@ router.post("/phone/verify", (req: express.Request, res: express.Response) => {
                             token: authToken.authToken
                         });
                     })
-                    .catch(() => {
-                            throw new Error();
+                    .catch((e) => {
+                        res.error(AppError.ErrorPerformingAction, e.message);
                     });
             }
         }

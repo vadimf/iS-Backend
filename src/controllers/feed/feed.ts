@@ -1,5 +1,5 @@
 import * as express from "express";
-import {postsWithPaginationResponseStub} from "../models/post";
+import {postsWithPaginationResponseStub} from "../../models/post";
 
 const router = express.Router();
 

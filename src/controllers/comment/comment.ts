@@ -1,6 +1,6 @@
 import * as express from "express";
-import {CommentStub} from "../models/comment";
-import {AppError} from "../models/app-error";
+import {CommentStub} from "../../models/comment";
+import {AppError} from "../../models/app-error";
 
 const router = express.Router();
 

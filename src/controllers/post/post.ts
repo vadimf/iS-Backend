@@ -1,6 +1,6 @@
 import * as express from "express";
-import {PostStub, postsWithPaginationResponseStub} from "../models/post";
-import {CommentStub, commentsWithPaginationResponseStub} from "../models/comment";
+import {PostStub, postsWithPaginationResponseStub} from "../../models/post";
+import {CommentStub, commentsWithPaginationResponseStub} from "../../models/comment";
 
 const router = express.Router();
 

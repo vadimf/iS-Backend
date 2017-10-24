@@ -1,5 +1,5 @@
 import * as express from "express";
-import {SystemConfiguration, SystemVarsStub} from "../models/system-vars";
+import {SystemConfiguration, SystemVarsStub} from "../../models/system-vars";
 
 const router = express.Router();
 

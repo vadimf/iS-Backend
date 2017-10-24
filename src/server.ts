@@ -55,8 +55,10 @@ app.set("views", path.join(__dirname, "../views"));
 app.set("view engine", "pug");
 app.use(compression());
 app.use(logger("dev"));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({limit: "50mb"}));
+app.use(bodyParser.urlencoded({
+    extended: false
+}));
 app.use(expressValidator());
 app.use(session({
   resave: true,
@@ -107,7 +109,7 @@ app.use(function(req, res, next) {
         }, data));
     };
 
-    req.performValidation = function(): boolean {
+    req.requestInvalid = function(): boolean {
         const errors = req.validationErrors();
 
         if ( ! errors ) {
@@ -125,15 +127,15 @@ app.use(function(req, res, next) {
 /**
  * Controllers (route handlers).
  */
-import {default as AuthRouter} from "./controllers/auth";
-import {default as NotificationsRouter} from "./controllers/notifications";
-import {default as UserRouter} from "./controllers/user";
-import {default as FeedRouter} from "./controllers/feed";
-import {default as SearchRouter} from "./controllers/search";
-import {default as PostRouter} from "./controllers/post";
-import {default as CommentRouter} from "./controllers/comment";
-import {default as DiscoverRouter} from "./controllers/discover";
-import {default as SystemRouter} from "./controllers/system";
+import {default as AuthRouter} from "./controllers/auth/auth";
+import {default as NotificationsRouter} from "./controllers/notifications/notifications";
+import {default as UserRouter} from "./controllers/user/user";
+import {default as FeedRouter} from "./controllers/feed/feed";
+import {default as SearchRouter} from "./controllers/search/search";
+import {default as PostRouter} from "./controllers/post/post";
+import {default as CommentRouter} from "./controllers/comment/comment";
+import {default as DiscoverRouter} from "./controllers/discover/discover";
+import {default as SystemRouter} from "./controllers/system/system";
 import {isAuthenticated} from "./config/passport";
 
 

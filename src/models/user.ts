@@ -41,7 +41,8 @@ export const AuthTokenSchema = new mongoose.Schema(
         },
         firebaseToken: {
             type: String,
-            unique: true
+            default: null,
+            sparse: true
         }
     },
     {
@@ -104,7 +105,8 @@ export const UserSchema = new mongoose.Schema(
             type: [AuthTokenSchema],
             required: true,
             unique: true,
-            index: true
+            index: true,
+            sparse: true
         },
         profile: {
             type: ProfileSchema
