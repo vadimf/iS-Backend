@@ -8,27 +8,23 @@ import fs = require("fs");
 import sharp = require("sharp");
 
 export async function updateUserDetails(req: express.Request) {
-    try {
-        if ( req.body.user ) {
-            await updateUsername(req);
-            await updateEmail(req);
+    if ( req.body.user ) {
+        await updateUsername(req);
+        await updateEmail(req);
 
-            if (req.body.user.profile) {
-                if (!req.user.profile) {
-                    req.user.profile = {};
-                }
-
-                await updateFirstName(req);
-                await updateLastName(req);
-                await updateBio(req);
-                await updateProfileImage(req);
+        if (req.body.user.profile) {
+            if (!req.user.profile) {
+                req.user.profile = {};
             }
+
+            await updateProfileImage(req);
+            await updateFirstName(req);
+            await updateLastName(req);
+            await updateBio(req);
         }
     }
-    catch (e) {
-        throw e;
-    }
 }
+
 
 function updateEmail(req: express.Request) {
     if ( req.body.user.email ) {
@@ -43,6 +39,7 @@ function updateEmail(req: express.Request) {
         req.user.email = req.body.user.email;
     }
 }
+
 
 function updateFirstName(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.firstName) ) {
@@ -66,6 +63,7 @@ function updateFirstName(req: express.Request) {
     }
 }
 
+
 function updateLastName(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.lastName) ) {
         req.checkBody({
@@ -88,6 +86,7 @@ function updateLastName(req: express.Request) {
     }
 }
 
+
 function updateBio(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.bio) ) {
         req.checkBody({
@@ -106,134 +105,128 @@ function updateBio(req: express.Request) {
     }
 }
 
-function updateProfileImage(req: express.Request) {
-    if ( req.body.user.profile.picture ) {
-        return new Promise((resolve, reject) => {
-            req.checkBody({
-                "user[profile][picture]": {
-                    isBase64: {
-                        errorMessage: "Base64 invalid"
-                    }
+
+async function updateProfileImage(req: express.Request) {
+    if ( ! req.body.user.profile.picture ) {
+        return;
+    }
+
+    req.checkBody({
+        "user[profile][picture]": {
+            isBase64: {
+                errorMessage: "Base64 invalid"
+            }
+        }
+    });
+
+    if ( ! req.requestInvalid() ) {
+        const imageBase64 = req.body.user.profile.picture;
+        const buffer = new Buffer(imageBase64, "base64");
+
+        if (!fs.existsSync(process.env.UPLOADS_PATH)) {
+            fs.mkdir(process.env.UPLOADS_PATH, (err) => {
+                if (err) {
+                    console.log("Uploading error", err);
+                    throw AppError.UploadingError;
                 }
             });
+        }
 
-            if (!req.requestInvalid()) {
-                const imageBase64 = req.body.user.profile.picture;
-                const buffer = new Buffer(imageBase64, "base64");
+        const uploadsPath = process.env.UPLOADS_PATH + "/" + req.user._id;
+        const uploadsUrl = process.env.UPLOADS_URL + "/" + req.user._id;
 
-                if (!fs.existsSync(process.env.UPLOADS_PATH)) {
-                    fs.mkdir(process.env.UPLOADS_PATH, (err) => {
-                        if (err) {
-                            console.log("Uploading error", err);
-                            return reject(AppError.UploadingError);
-                        }
-                    });
+        if ( ! fs.existsSync(uploadsPath) ) {
+            fs.mkdir(uploadsPath, (err) => {
+                if (err) {
+                    throw AppError.UploadingError;
                 }
+            });
+        }
 
-                const uploadsPath = process.env.UPLOADS_PATH + "/" + req.user._id;
-                const uploadsUrl = process.env.UPLOADS_URL + "/" + req.user._id;
+        const fileName = Utilities.randomString(32);
+        const thumbnailFileName = fileName + ".thumb";
+        const fileExtension = ".png";
 
-                if (!fs.existsSync(uploadsPath)) {
-                    fs.mkdir(uploadsPath, (err) => {
-                        if (err) {
-                            console.log("Uploading error", err);
-                            return reject(AppError.UploadingError);
-                        }
-                    });
-                }
+        const filePath = uploadsPath + "/" + fileName + fileExtension;
+        const thumbnailFilePath = uploadsPath + "/" + thumbnailFileName + fileExtension;
 
-                const fileName = Utilities.randomString(32);
-                const thumbnailFileName = fileName + ".thumb";
-                const fileExtension = ".png";
+        const fileUrl = uploadsUrl + "/" + fileName + fileExtension;
+        const thumbnailFileUrl = uploadsUrl + "/" + thumbnailFileName + fileExtension;
 
-                const filePath = uploadsPath + "/" + fileName + fileExtension;
-                const thumbnailFilePath = uploadsPath + "/" + thumbnailFileName + fileExtension;
-
-                const fileUrl = uploadsUrl + "/" + fileName + fileExtension;
-                const thumbnailFileUrl = uploadsUrl + "/" + thumbnailFileName + fileExtension;
-
-                if (!req.user.profile.picture) {
-                    req.user.profile.picture = {};
-                }
-                else {
-                    if ( req.user.profile.picture.path ) {
-                        fs.unlink(req.user.profile.picture.path, (err) => {
-                            if ( err) {
-                                console.log("Error removing previous image", err);
-                            }
-                        });
+        if ( ! req.user.profile.picture ) {
+            req.user.profile.picture = {};
+        }
+        else {
+            if ( req.user.profile.picture.path ) {
+                fs.unlink(req.user.profile.picture.path, (err) => {
+                    if ( err) {
+                        console.log("Error removing previous image", err);
                     }
-
-                    if ( req.user.profile.picture.thumbnailPath ) {
-                        fs.unlink(req.user.profile.picture.thumbnailPath, (err) => {
-                            if ( err) {
-                                console.log("Error removing previous thumbnail", err);
-                            }
-                        });
-                    }
-                }
-
-                sharp(buffer)
-                    .resize(200, 200)
-                    .toFile(thumbnailFilePath)
-                    .then(() => {
-                        req.user.profile.picture.thumbnail = thumbnailFileUrl;
-                        req.user.profile.picture.thumbnailPath = thumbnailFilePath;
-                    })
-                    .catch((err) => {
-                        console.log("Resizing error", err);
-                    });
-
-
-                sharp(buffer)
-                    .toFile(filePath)
-                    .then(() => {
-                        req.user.profile.picture.url = fileUrl;
-                        req.user.profile.picture.path = filePath;
-                        resolve();
-                    })
-                    .catch((err) => {
-                        console.log("Uploading error", err);
-                        reject(AppError.UploadingError);
-                    });
+                });
             }
-        });
+
+            if ( req.user.profile.picture.thumbnailPath ) {
+                fs.unlink(req.user.profile.picture.thumbnailPath, (err) => {
+                    if ( err) {
+                        console.log("Error removing previous thumbnail", err);
+                    }
+                });
+            }
+        }
+
+        const thumbnailCreationPromise = sharp(buffer)
+            .resize(200, 200)
+            .toFile(thumbnailFilePath);
+                //
+        const imageSavingPromise = sharp(buffer)
+            .toFile(filePath);
+
+        try {
+            await Promise.all([thumbnailCreationPromise, imageSavingPromise]);
+        }
+        catch (e) {
+            throw AppError.ErrorPerformingAction;
+        }
+
+        req.user.profile.picture.thumbnail = thumbnailFileUrl;
+        req.user.profile.picture.thumbnailPath = thumbnailFilePath;
+
+        req.user.profile.picture.url = fileUrl;
+        req.user.profile.picture.path = filePath;
     }
 }
 
-function updateUsername(req: express.Request) {
-    if ( req.body.user.username ) {
-        return new Promise((resolve, reject) => {
-            req.checkBody({
-                "user[username]": {
-                    matches: {
-                        options: Utilities.stringToRegExp(SystemConfiguration.validations.username.regex),
-                        errorMessage: "Username doesn't match regex"
-                    },
-                    isLength: {
-                        options: [{
-                            min: SystemConfiguration.validations.username.minLength,
-                            max: SystemConfiguration.validations.username.maxLength
-                        }],
-                        errorMessage: "Username length is invalid"
-                    }
-                }
-            });
 
-            const username = req.body.user.username;
-
-            User.findOne({username: username})
-                .then((data) => {
-                    if (data && !data._id.equals(req.user._id)) {
-                        reject(AppError.UsernameAlreadyTaken);
-                    }
-
-                    req.user.username = username;
-                    resolve();
-                })
-                .catch(() => {
-                    reject(AppError.ErrorPerformingAction);
-                });
-        });
+async function updateUsername(req: express.Request) {
+    if ( ! req.body.user.username ) {
+        return;
     }
+
+    req.checkBody({
+        "user[username]": {
+            matches: {
+                options: Utilities.stringToRegExp(SystemConfiguration.validations.username.regex),
+                errorMessage: "Username doesn't match regex"
+            },
+            isLength: {
+                options: [{
+                    min: SystemConfiguration.validations.username.minLength,
+                    max: SystemConfiguration.validations.username.maxLength
+                }],
+                errorMessage: "Username length is invalid"
+            }
+        }
+    });
+
+    const username: String = req.body.user.username;
+
+    const foundUser = await User.findOne({
+        username: username
+    });
+
+    if ( foundUser && ! foundUser._id.equals(req.user._id)) {
+        throw AppError.UsernameAlreadyTaken;
+    }
+
+    req.user.username = username;
 }

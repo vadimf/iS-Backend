@@ -11,7 +11,7 @@ export class Pagination {
     }
 
     get page(): number {
-        if ( this._page < 1 ) {
+        if ( ! this._page || this._page < 1 ) {
             return 1;
         }
 

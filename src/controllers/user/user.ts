@@ -3,101 +3,106 @@ import {ForeignUserStub} from "../../models/user";
 import {Pagination} from "../../models/pagination";
 import {postsWithPaginationResponseStub} from "../../models/post";
 import {updateUserDetails} from "./update-user";
+import {AppError} from "../../models/app-error";
+import {Follower} from "../../models/follow";
+import {default as ForeignUserRouter} from "./foreign-user-router";
 
 const router = express.Router();
 
 
-/**
- * @api {get} /user Get your user details & profile
- * @apiName GetMyUser
- * @apiGroup User
- *
- * @apiSuccess {User}       user My user object
- * @apiSuccess {String}         user.username Username
- * @apiSuccess {String}         user.email Email
- * @apiSuccess {PhoneNumber}    user.phone PhoneNumber object
- * @apiSuccess {String}             user.phone.country Country code
- * @apiSuccess {String}             user.phone.area Area code
- * @apiSuccess {String}             user.phone.number Country code
- * @apiSuccess {Profile}        user.profile User's profile metadata
- * @apiSuccess {String}             user.profile.firstName First name
- * @apiSuccess {String}             user.profile.lastName Last name
- * @apiSuccess {Object}             user.profile.picture User's profile picture
- * @apiSuccess {String}                 user.profile.picture.url Url
- * @apiSuccess {String}                 user.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}             user.profile.bio Bio text
- * @apiSuccess {int}            user.following Following counter
- * @apiSuccess {int}            user.followers Followers counter
- * @apiSuccess {String}         user.createdAt Date registered
- */
-router.get("/", (req: express.Request, res: express.Response) => {
-    res.response({user: req.user.toLoggedUser()});
-});
+router
+    .route("/")
 
-/**
- * @api {patch} /user Update user details
- * @apiName UpdateMyUser
- * @apiGroup User
- *
- * @apiParam {User}       user User object
- * @apiParam {String}         user.username Username
- * @apiParam {String}         user.email Email
- * @apiParam {PhoneNumber}    user.phone PhoneNumber object
- * @apiParam {String}             user.phone.country Country code
- * @apiParam {String}             user.phone.area Area code
- * @apiParam {String}             user.phone.number Country code
- * @apiParam {Profile}        user.profile User's profile metadata
- * @apiParam {String}             user.profile.firstName First name
- * @apiParam {String}             user.profile.lastName Last name
- * @apiParam {String}             user.profile.picture User's profile picture <code>base64</code>
- *
- * @apiSuccess {User}       user My user object
- * @apiSuccess {String}         user.username Username
- * @apiSuccess {String}         user.email Email
- * @apiSuccess {PhoneNumber}    user.phone PhoneNumber object
- * @apiSuccess {String}             user.phone.country Country code
- * @apiSuccess {String}             user.phone.area Area code
- * @apiSuccess {String}             user.phone.number Country code
- * @apiSuccess {Profile}        user.profile User's profile metadata
- * @apiSuccess {String}             user.profile.firstName First name
- * @apiSuccess {String}             user.profile.lastName Last name
- * @apiSuccess {Object}             user.profile.picture User's profile picture
- * @apiSuccess {String}                 user.profile.picture.url Url
- * @apiSuccess {String}                 user.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}             user.profile.bio Bio text
- * @apiSuccess {int}            user.following Following counter
- * @apiSuccess {int}            user.followers Followers counter
- * @apiSuccess {String}         user.createdAt Date registered
- */
-router.patch("/", (req: express.Request, res: express.Response) => {
-    updateUserDetails(req)
-        .then(() => {
-            if ( req.requestInvalid() ) {
-                return;
-            }
+    /**
+     * @api {get} /user Get your user details & profile
+     * @apiName GetMyUser
+     * @apiGroup User
+     *
+     * @apiSuccess {User}       user My user object
+     * @apiSuccess {String}         user.username Username
+     * @apiSuccess {String}         user.email Email
+     * @apiSuccess {PhoneNumber}    user.phone PhoneNumber object
+     * @apiSuccess {String}             user.phone.country Country code
+     * @apiSuccess {String}             user.phone.area Area code
+     * @apiSuccess {String}             user.phone.number Country code
+     * @apiSuccess {Profile}        user.profile User's profile metadata
+     * @apiSuccess {String}             user.profile.firstName First name
+     * @apiSuccess {String}             user.profile.lastName Last name
+     * @apiSuccess {Object}             user.profile.picture User's profile picture
+     * @apiSuccess {String}                 user.profile.picture.url Url
+     * @apiSuccess {String}                 user.profile.picture.thumbnail Thumbnail url
+     * @apiSuccess {String}             user.profile.bio Bio text
+     * @apiSuccess {int}            user.following Following counter
+     * @apiSuccess {int}            user.followers Followers counter
+     * @apiSuccess {String}         user.createdAt Date registered
+     */
+    .get((req: express.Request, res: express.Response) => {
+        res.response({user: req.user.toLoggedUser()});
+    })
 
-            if ( req.user.isModified() ) {
-                req.user.save();
-            }
+    /**
+     * @api {patch} /user Update user details
+     * @apiName UpdateMyUser
+     * @apiGroup User
+     *
+     * @apiParam {User}       user User object
+     * @apiParam {String}         user.username Username
+     * @apiParam {String}         user.email Email
+     * @apiParam {PhoneNumber}    user.phone PhoneNumber object
+     * @apiParam {String}             user.phone.country Country code
+     * @apiParam {String}             user.phone.area Area code
+     * @apiParam {String}             user.phone.number Country code
+     * @apiParam {Profile}        user.profile User's profile metadata
+     * @apiParam {String}             user.profile.firstName First name
+     * @apiParam {String}             user.profile.lastName Last name
+     * @apiParam {String}             user.profile.picture User's profile picture <code>base64</code>
+     *
+     * @apiSuccess {User}       user My user object
+     * @apiSuccess {String}         user.username Username
+     * @apiSuccess {String}         user.email Email
+     * @apiSuccess {PhoneNumber}    user.phone PhoneNumber object
+     * @apiSuccess {String}             user.phone.country Country code
+     * @apiSuccess {String}             user.phone.area Area code
+     * @apiSuccess {String}             user.phone.number Country code
+     * @apiSuccess {Profile}        user.profile User's profile metadata
+     * @apiSuccess {String}             user.profile.firstName First name
+     * @apiSuccess {String}             user.profile.lastName Last name
+     * @apiSuccess {Object}             user.profile.picture User's profile picture
+     * @apiSuccess {String}                 user.profile.picture.url Url
+     * @apiSuccess {String}                 user.profile.picture.thumbnail Thumbnail url
+     * @apiSuccess {String}             user.profile.bio Bio text
+     * @apiSuccess {int}            user.following Following counter
+     * @apiSuccess {int}            user.followers Followers counter
+     * @apiSuccess {String}         user.createdAt Date registered
+     */
+    .patch(async (req: express.Request, res: express.Response) => {
+        updateUserDetails(req)
+            .then(() => {
+                if ( req.requestInvalid() ) {
+                    return;
+                }
 
-            res.response({user: req.user.toLoggedUser()});
-        })
-        .catch((error) => {
-            res.error(error);
-        });
-});
+                if ( req.user.isModified() ) {
+                    req.user.save();
+                }
 
+                res.response({user: req.user.toLoggedUser()});
+            })
+            .catch((error) => {
+                res.error(error);
+            });
+    })
 
-/**
- * @api {delete} /user Disable a user
- * @apiName DisableMyUser
- * @apiGroup User
- *
- * @apiParam {String} reason Disable reason
- */
-router.delete("/", (req: express.Request, res: express.Response) => {
-    res.response();
-});
+    /**
+     * @api {delete} /user Disable a user
+     * @apiName DisableMyUser
+     * @apiGroup User
+     *
+     * @apiParam {String} reason Disable reason
+     */
+    .delete((req: express.Request, res: express.Response) => {
+        res.response();
+    });
 
 
 /**
@@ -128,13 +133,42 @@ router.delete("/", (req: express.Request, res: express.Response) => {
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.get("/following", (req: express.Request, res: express.Response) => {
-    const pagination = new Pagination(1, 3, 50);
+router.get("/following", async (req: express.Request, res: express.Response) => {
+    try {
+        const totalFollowing: number = await Follower.count({follower: req.user._id});
+        const page: number = +req.query.page;
 
-    res.response({
-        users: [ForeignUserStub, ForeignUserStub, ForeignUserStub],
-        pagination: pagination
-    });
+        const pagination = new Pagination(page, totalFollowing);
+
+        const followingUsers = await Follower.find({follower: req.user._id});
+
+        console.log(followingUsers);
+
+        res.response({
+            pagination: pagination
+        });
+    }
+    catch (e) {
+        res.error(AppError.ErrorPerformingAction, e);
+    }
+
+    // Follower
+    //     .findOne({
+    //         follower:
+    //     })
+    //     .populate("following")
+    //     .then((f) => {
+    //         console.log(f.following);
+    //     })
+    //     .catch(console.log);
+    //
+    //
+    // const pagination = new Pagination(1, 3, 50);
+    //
+    // res.response({
+    //     users: [ForeignUserStub, ForeignUserStub, ForeignUserStub],
+    //     pagination: pagination
+    // });
 });
 
 
@@ -220,173 +254,7 @@ router.get("/posts", (req: express.Request, res: express.Response) => {
 });
 
 
-/**
- * @api {get} /user/:username Get user details
- * @apiName GetUser
- * @apiGroup User
- *
- * @apiSuccess {User}       user Foreign user object
- * @apiSuccess {String}         user.username Username
- * @apiSuccess {Profile}        user.profile User's profile metadata
- * @apiSuccess {String}             user.profile.firstName First name
- * @apiSuccess {String}             user.profile.lastName Last name
- * @apiSuccess {Object}             user.profile.picture User's profile picture
- * @apiSuccess {String}                 user.profile.picture.url Url
- * @apiSuccess {String}                 user.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}             user.profile.bio Bio text
- * @apiSuccess {int}            user.following Following counter
- * @apiSuccess {int}            user.followers Followers counter
- * @apiSuccess {boolean}        user.isFollowing Already following this user
- * @apiSuccess {String}         user.createdAt Date registered
- */
-router.get("/:username", (req: express.Request, res: express.Response) => {
-    res.response({user: ForeignUserStub});
-});
-
-
-/**
- * @api {post} /user/:username/report Report a user
- * @apiName ReportUser
- * @apiGroup User
- *
- * @apiParam {String} vars Not ready yet...
- */
-// TODO: Prepare report reason enum
-router.post("/:username/report", (req: express.Request, res: express.Response) => {
-    res.response();
-});
-
-
-/**
- * @api {post} /user/:username/follow Follow a user
- * @apiName FollowUser
- * @apiGroup User
- */
-router.post("/:username/follow", (req: express.Request, res: express.Response) => {
-    res.response();
-});
-
-
-/**
- * @api {delete} /user/:username/follow Unfollow a user
- * @apiName UnfollowUser
- * @apiGroup User
- */
-router.delete("/:username/follow", (req: express.Request, res: express.Response) => {
-    res.response();
-});
-
-
-/**
- * @api {get} /user/:username/following Followed by user
- * @apiName FollowedByUser
- * @apiGroup User
- *
- * @apiParam {int} page Page
- *
- * @apiSuccess {User[]}     users Foreign user object
- * @apiSuccess {String}         users.username Username
- * @apiSuccess {Profile}        users.profile User's profile metadata
- * @apiSuccess {String}             users.profile.firstName First name
- * @apiSuccess {String}             users.profile.lastName Last name
- * @apiSuccess {Object}             users.profile.picture User's profile picture
- * @apiSuccess {String}                 users.profile.picture.url Url
- * @apiSuccess {String}                 users.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}             users.profile.bio Bio text
- * @apiSuccess {int}            users.following Following counter
- * @apiSuccess {int}            users.followers Followers counter
- * @apiSuccess {boolean}        users.isFollowing Already following this user
- * @apiSuccess {String}         users.createdAt Date registered
- *
- * @apiSuccess {Pagination}     pagination Pagination object
- * @apiSuccess {int}                pagination.page Current page
- * @apiSuccess {int}                pagination.pages Total pages
- * @apiSuccess {int}                pagination.results Total results
- * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
- * @apiSuccess {int}                pagination.offset Start offset
- */
-router.get("/:username/following", (req: express.Request, res: express.Response) => {
-    const pagination = new Pagination(1, 3, 50);
-
-    res.response({
-        users: [ForeignUserStub, ForeignUserStub, ForeignUserStub],
-        pagination: pagination
-    });
-});
-
-
-/**
- * @api {get} /user/:username/followers User's followers
- * @apiName FollowingUser
- * @apiGroup User
- *
- * @apiParam {int} page Page
- *
- * @apiSuccess {User[]}     users Foreign user object
- * @apiSuccess {String}         users.username Username
- * @apiSuccess {Profile}        users.profile User's profile metadata
- * @apiSuccess {String}             users.profile.firstName First name
- * @apiSuccess {String}             users.profile.lastName Last name
- * @apiSuccess {Object}             users.profile.picture User's profile picture
- * @apiSuccess {String}                 users.profile.picture.url Url
- * @apiSuccess {String}                 users.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}             users.profile.bio Bio text
- * @apiSuccess {int}            users.following Following counter
- * @apiSuccess {int}            users.followers Followers counter
- * @apiSuccess {boolean}        users.isFollowing Already following this user
- * @apiSuccess {String}         users.createdAt Date registered
- *
- * @apiSuccess {Pagination}     pagination Pagination object
- * @apiSuccess {int}                pagination.page Current page
- * @apiSuccess {int}                pagination.pages Total pages
- * @apiSuccess {int}                pagination.results Total results
- * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
- * @apiSuccess {int}                pagination.offset Start offset
- */
-router.get("/:username/followers", (req: express.Request, res: express.Response) => {
-    const pagination = new Pagination(1, 3, 50);
-
-    res.response({
-        users: [ForeignUserStub, ForeignUserStub, ForeignUserStub],
-        pagination: pagination
-    });
-});
-
-
-/**
- * @api {get} /user/:username/posts User's posts
- * @apiName UserPosts
- * @apiGroup User
- *
- * @apiParam {int} page Page
- *
- * @apiSuccess {Post[]}     posts Post object
- * @apiSuccess {String}         posts.id Post ID
- * @apiSuccess {String}         posts.createdAt Post creation date
- * @apiSuccess {String}         posts.creator Creator (user) object
- * @apiSuccess {String}             posts.creator.username Username
- * @apiSuccess {Profile}            posts.creator.profile User's profile metadata
- * @apiSuccess {String}                 posts.creator.profile.firstName First name
- * @apiSuccess {String}                 posts.creator.profile.lastName Last name
- * @apiSuccess {Object}                 posts.creator.profile.picture User's profile picture
- * @apiSuccess {String}                     posts.creator.profile.picture.url Url
- * @apiSuccess {String}                     posts.creator.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}                 posts.creator.profile.bio Bio text
- * @apiSuccess {int}                posts.creator.following Following counter
- * @apiSuccess {int}                posts.creator.followers Followers counter
- * @apiSuccess {boolean}            posts.creator.isFollowing Already following this user
- * @apiSuccess {String}             posts.creator.createdAt Date registered
- *
- * @apiSuccess {Pagination}     pagination Pagination object
- * @apiSuccess {int}                pagination.page Current page
- * @apiSuccess {int}                pagination.pages Total pages
- * @apiSuccess {int}                pagination.results Total results
- * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
- * @apiSuccess {int}                pagination.offset Start offset
- */
-router.get("/:username/posts", (req: express.Request, res: express.Response) => {
-    res.response(postsWithPaginationResponseStub(req));
-});
+router.use("/:username", ForeignUserRouter);
 
 
 export default router;

@@ -110,7 +110,12 @@ export const UserSchema = new mongoose.Schema(
         },
         profile: {
             type: ProfileSchema
-        }
+        },
+        following: [{
+            // TODO: Check with Tomer: How
+            type: mongoose.SchemaTypes.ObjectId,
+            ref: "User"
+        }]
     },
     {
         timestamps: true
@@ -180,6 +185,16 @@ export const ForeignUserStub: IForeignUser = {
     "isFollowing": false,
     "createdAt": CreatedAtDateStub
 };
+
+export function foreignUsersArray(users: IUserModel[]): IForeignUser[] {
+    const parsedUsers: IForeignUser[] = [];
+
+    for ( const user of users ) {
+        parsedUsers.push(user.toForeignUser());
+    }
+
+    return parsedUsers;
+}
 
 
 export const User = mongoose.model<IUserModel>("User", UserSchema, "users");

@@ -43,6 +43,11 @@ export class AppError {
      */
     static ObjectDoesNotExist = new AppError(StatusCode.NotFound, 200, "Object doesn't exist");
     /**
+     * @apiDefine ObjectExist
+     * @apiError 201 The requested object already exist
+     */
+    static ObjectExist = new AppError(StatusCode.Conflict, 201, "Object already exist");
+    /**
      * @apiDefine ErrorPerformingAction
      * @apiError 100 The requested action could not be completed
      */

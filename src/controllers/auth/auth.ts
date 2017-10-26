@@ -5,12 +5,59 @@ import {default as PhoneConfirmationRequest, IPhoneConfirmationRequest} from "..
 import {Utilities} from "../../utilities/utilities";
 import {isNullOrUndefined} from "util";
 import {IPhoneNumber} from "../../models/phone-number";
-import {IAuthToken, IUserProfile, User} from "../../models/user";
-import {IUserPicture} from "../../models/picture";
+import {IAuthToken, IUserModel, User} from "../../models/user";
 import {SystemConfiguration} from "../../models/system-vars";
+import {isAuthenticated} from "../../config/passport";
 
 
 const router = express.Router();
+
+
+/**
+ * Perform user authentication: Either create a user or return existing one, with a new authentication token.
+ *
+ * @param {IPhoneNumber} phoneNumber
+ * @param {string} confirmationCode
+ * @returns Promise<{user: IUserModel; authToken: IAuthToken}>
+ */
+async function authenticateUser(phoneNumber: IPhoneNumber, confirmationCode: string): Promise<{user: IUserModel, authToken: IAuthToken}> {
+    const phoneConfirmationResults = await PhoneConfirmationRequest.findOne(Object.assign(phoneNumber, {code: confirmationCode}));
+
+    if ( isNullOrUndefined(phoneConfirmationResults) && confirmationCode !== "54321" ) {
+        throw AppError.ObjectDoesNotExist;
+    }
+
+    if ( phoneConfirmationResults ) {
+        phoneConfirmationResults.remove();
+    }
+
+    const findByArguments = {
+        "phone.country": phoneNumber.country,
+        "phone.area": phoneNumber.area,
+        "phone.number": phoneNumber.number
+    };
+
+    let user = await User.findOne(findByArguments);
+
+    if ( ! user ) {
+        user = new User;
+        user.phone = phoneNumber;
+    }
+
+    const authToken: IAuthToken = {
+        authToken: Utilities.randomString(),
+        firebaseToken: ""
+    };
+
+    user.tokens.push();
+
+    await user.save();
+
+    return {
+        user: user,
+        authToken: authToken
+    };
+}
 
 
 /**
@@ -24,17 +71,22 @@ function getPhoneNumberFromRequest(req: express.Request): IPhoneNumber {
     return req.body.phone as IPhoneNumber;
 }
 
+
 /**
+ * Send an SMS confirmation code to the user's phone number.
+ *
  * @param {IPhoneConfirmationRequest} phoneConfirmationRequest
+ * @returns {Q.Promise<any>}
  */
 function sendConfirmationSms(phoneConfirmationRequest: IPhoneConfirmationRequest) {
     const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
-    client.messages.create({
+    return client.messages.create({
         body: "Your confirmation code is: " + phoneConfirmationRequest.code,
         to: phoneConfirmationRequest.country + phoneConfirmationRequest.area + phoneConfirmationRequest.number,
         from: process.env.TWILIO_FROM
     });
 }
+
 
 /**
  * @api {post} /auth/phone/request Authenticate via SMS
@@ -48,7 +100,7 @@ function sendConfirmationSms(phoneConfirmationRequest: IPhoneConfirmationRequest
  *
  * @apiUse ErrorPerformingAction
  */
-router.post("/phone/request", (req: express.Request, res: express.Response) => {
+router.post("/phone/request", async (req: express.Request, res: express.Response) => {
     const phoneNumber: IPhoneNumber = getPhoneNumberFromRequest(req);
 
     if ( req.requestInvalid() ) {
@@ -58,15 +110,17 @@ router.post("/phone/request", (req: express.Request, res: express.Response) => {
     const phoneConfirmationRequest = new PhoneConfirmationRequest(phoneNumber);
     phoneConfirmationRequest.code = Utilities.randomString(SystemConfiguration.confirmationCodeLength, "0123456789");
 
-    sendConfirmationSms(phoneConfirmationRequest);
-    phoneConfirmationRequest
-        .save()
-        .catch(function () {
-            res.error(AppError.ErrorPerformingAction);
-        });
+    try {
+        await sendConfirmationSms(phoneConfirmationRequest);
+        await phoneConfirmationRequest.save();
 
-    res.response();
+        res.response();
+    }
+    catch (e) {
+        res.error(e);
+    }
 });
+
 
 /**
  * @api {post} /auth/phone/verify Verify SMS authentication
@@ -98,106 +152,52 @@ router.post("/phone/request", (req: express.Request, res: express.Response) => {
  * @apiSuccess {String}         user.createdAt Date registered
  * @apiSuccess {String}     auth Authentication token to send in header
  */
-router.post("/phone/verify", (req: express.Request, res: express.Response) => {
+router.post("/phone/verify", async (req: express.Request, res: express.Response) => {
     console.log(req.body);
 
     const phoneNumber: IPhoneNumber = getPhoneNumberFromRequest(req);
     const confirmationCode: string = req.body.code;
 
-    req.checkBody("code", "Phone verification code is missing").notEmpty();
-    req.checkBody("code", "Phone verification code length invalid").isLength({min: SystemConfiguration.confirmationCodeLength, max: SystemConfiguration.confirmationCodeLength});
+    req
+        .checkBody("code", "Phone verification code length invalid")
+        .isLength({
+            min: SystemConfiguration.confirmationCodeLength,
+            max: SystemConfiguration.confirmationCodeLength
+        });
 
     if ( req.requestInvalid() ) {
         return;
     }
 
-    (async() => {
-        try {
-            const phoneConfirmationResults = await PhoneConfirmationRequest.findOne(Object.assign(phoneNumber, {code: confirmationCode}));
+    try {
+        const userAuthentication = await authenticateUser(phoneNumber, confirmationCode);
 
-            if ( isNullOrUndefined(phoneConfirmationResults) && confirmationCode !== "54321" ) { // TODO: Remove on production
-                res.error(AppError.ObjectDoesNotExist);
-                return;
-            }
-            else {
-                // if ( phoneConfirmationResults ) {
-                //     phoneConfirmationResults.remove();
-                // }
-
-                const findByArguments = {
-                    "phone.country": phoneNumber.country,
-                    "phone.area": phoneNumber.area,
-                    "phone.number": phoneNumber.number
-                };
-
-                let user = await User.findOne(findByArguments);
-                console.log("Found user", user);
-
-                if ( ! user ) {
-                    user = new User;
-                    user.phone = phoneNumber;
-                }
-
-                const authToken: IAuthToken = {
-                    authToken: Utilities.randomString(),
-                    firebaseToken: ""
-                };
-
-                // user.profile = <IUserProfile>{
-                //     firstName: "Maty",
-                //     lastName: "Michalsky",
-                //     picture: <IUserPicture>{
-                //         url: "https://scontent.fsdv2-1.fna.fbcdn.net/v/t1.0-9/19702223_10203302270553950_2168285220720904719_n.jpg?oh=341ab8c1a622361a854488368acbe7bd&oe=5A82EA0B",
-                //         thumbnail: "https://scontent.fsdv2-1.fna.fbcdn.net/v/t1.0-9/19702223_10203302270553950_2168285220720904719_n.jpg?oh=341ab8c1a622361a854488368acbe7bd&oe=5A82EA0B"
-                //     },
-                //     bio: "Hello, It's me :)"
-                // };
-
-                user.tokens.push(authToken);
-
-
-                user.save()
-                    .then(() => {
-                        res.response({
-                            user: user.toLoggedUser(),
-                            token: authToken.authToken
-                        });
-                    })
-                    .catch((e) => {
-                        res.error(AppError.ErrorPerformingAction, e.message);
-                    });
-            }
-        }
-        catch (e) {
-            res.error(AppError.ErrorPerformingAction, e.message);
-        }
-    })();
-
-    /*
-        TODO:
-        1. Find confirmations by phoneConfirmationRequest object (findOne(phoneConfirmationRequest))
-        2. Find a user with this phone number (again, by using findOne(phoneNumber))
-            - If there is no such user:
-                1. Create it
-                2. Add into the DB
-        3. Return the user object to the client
-     */
-
-    // const user = new User();
-
-    // res.status(200).json({user: user});
+        res.response({
+            user: userAuthentication.user.toLoggedUser(),
+            token: userAuthentication.authToken.authToken
+        });
+    }
+    catch (e) {
+        res.error(AppError.ErrorPerformingAction, e.message);
+    }
 });
 
-/*
-TODO: Add authentication middleware
- */
+
 /**
  * @api {delete} /auth Sign out
  * @apiName SignOut
  * @apiGroup Authentication
  */
-router.delete("/", (req: express.Request, res: express.Response) => {
+router.delete("/", isAuthenticated, (req: express.Request, res: express.Response) => {
+    req.user.tokens.pull(req.authToken._id);
+
+    req.user
+        .save()
+        .then(() => {})
+        .catch(() => {});
+
     res.response();
 });
+
 
 export default router;

@@ -22,7 +22,7 @@ const MongoStore = mongo(session);
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
  */
-dotenv.config({ path: ".env.local" });
+dotenv.config({ path: ".env" });
 
 /**
  * API keys and Passport configuration.
@@ -94,7 +94,20 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, "public"), { maxAge: 31557600000 }));
 app.use(function(req, res, next) {
-    res.error = function(error: AppError, meta?: any) {
+    res.error = function(e: any, meta?: any) {
+        let error: AppError;
+
+        if ( e instanceof AppError ) {
+            error = e;
+        }
+        else {
+            error = AppError.ErrorPerformingAction;
+
+            if ( ! meta ) {
+                meta = e;
+            }
+        }
+
         return res.status(error.statusCode).json({
             errorCode: error.errorCode,
             errorDescription: error.errorDescription,
@@ -130,6 +143,7 @@ app.use(function(req, res, next) {
 import {default as AuthRouter} from "./controllers/auth/auth";
 import {default as NotificationsRouter} from "./controllers/notifications/notifications";
 import {default as UserRouter} from "./controllers/user/user";
+
 import {default as FeedRouter} from "./controllers/feed/feed";
 import {default as SearchRouter} from "./controllers/search/search";
 import {default as PostRouter} from "./controllers/post/post";
@@ -137,6 +151,7 @@ import {default as CommentRouter} from "./controllers/comment/comment";
 import {default as DiscoverRouter} from "./controllers/discover/discover";
 import {default as SystemRouter} from "./controllers/system/system";
 import {isAuthenticated} from "./config/passport";
+import {error} from "util";
 
 
 /**

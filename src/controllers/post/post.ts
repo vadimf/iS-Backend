@@ -200,7 +200,7 @@ router.post("/:post/comment", (req: express.Request, res: express.Response) => {
  *
  * @apiParam {int} page Page
  *
- * @apiSuccess {Post[]}     post Post objects
+ * @apiSuccess {Post[]}     posts Post objects
  * @apiSuccess {String}         posts.id Post ID
  * @apiSuccess {String}         posts.createdAt Post creation date
  * @apiSuccess {User}           posts.creator Creator (user) object

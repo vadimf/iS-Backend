@@ -8,7 +8,9 @@ declare namespace Express {
         requestInvalid(): boolean;
         /** @var IUserModel */
         user?: any;
+        authToken?: any;
     }
+
     interface Response {
         error?: any;
         response?: any;
