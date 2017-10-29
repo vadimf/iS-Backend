@@ -1,9 +1,44 @@
 import * as express from "express";
-import {PostStub, postsWithPaginationResponseStub} from "../../models/post";
+import {IPost, Post, postsWithPaginationResponseStub} from "../../models/post";
 import {CommentStub, commentsWithPaginationResponseStub} from "../../models/comment";
+import {SystemConfiguration} from "../../models/system-vars";
+import {AppError} from "../../models/app-error";
+import {IUserModel} from "../../models/user";
+import {asyncMiddleware} from "../../server";
 
 const router = express.Router();
 
+/**
+ * Get a post by it's ID
+ *
+ * @param {string} id
+ * @returns Promise<IPost>
+ */
+async function getPostById(id: string) {
+    const post = await Post
+        .findOne({_id: id})
+        .populate("creator");
+
+    if ( ! post ) {
+        throw AppError.ObjectDoesNotExist;
+    }
+
+    return post;
+}
+
+function addViewToPost(post: IPost, user: IUserModel) {
+    if ( post.creator._id.equals(user._id) ) {
+        return;
+    }
+
+    post.viewers.push(user._id);
+
+    if ( post.isModified() ) {
+        post.save()
+            .then(() => {})
+            .catch(() => {});
+    }
+}
 
 /**
  * @api {post} /post Create a post
@@ -38,100 +73,165 @@ const router = express.Router();
  * @apiSuccess {int}            post.comments Post comments
  * @apiSuccess {String}         post.text Post text
  */
-router.post("/", (req: express.Request, res: express.Response) => {
-    res.response({post: PostStub});
-});
+router.post("/", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const text: string = req.body.text;
+
+    req.checkBody({
+        "text": {
+            isLength: {
+                options: [{
+                    min: SystemConfiguration.validations.postText.minLength,
+                    max: SystemConfiguration.validations.postText.maxLength
+                }],
+                errorMessage: "Post-text length is invalid"
+            }
+        }
+    });
+
+    if ( req.requestInvalid() ) {
+        return;
+    }
+
+    const post = new Post();
+
+    post.text = text;
+    post.video = {
+        url: "http://techslides.com/demos/sample-videos/small.mp4",
+        thumbnails: [
+            "http://images.media-allrecipes.com/userphotos/960x960/3757723.jpg",
+            "https://www.thesun.co.uk/wp-content/uploads/2016/09/nintchdbpict000264481984.jpg?w=960",
+            "https://mcdonalds.com.au/sites/mcdonalds.com.au/files/hero_pdt_hamburger.png"
+        ],
+        duration: 5
+    };
+    post.creator = req.user;
+
+    await post.save();
+
+    res.response({post: post});
+}));
+
+router
+    .route("/:post")
+
+    /**
+     * @api {get} /post/:post Get post by ID
+     * @apiName GetPost
+     * @apiGroup Post
+     *
+     * @apiSuccess {Post}     post Post object
+     * @apiSuccess {String}         post.id Post ID
+     * @apiSuccess {String}         post.createdAt Post creation date
+     * @apiSuccess {User}           post.creator Creator (user) object
+     * @apiSuccess {String}             post.creator.username Username
+     * @apiSuccess {Profile}            post.creator.profile User's profile metadata
+     * @apiSuccess {String}                 post.creator.profile.firstName First name
+     * @apiSuccess {String}                 post.creator.profile.lastName Last name
+     * @apiSuccess {Object}                 post.creator.profile.picture User's profile picture
+     * @apiSuccess {String}                     post.creator.profile.picture.url Url
+     * @apiSuccess {String}                     post.creator.profile.picture.thumbnail Thumbnail url
+     * @apiSuccess {String}                 post.creator.profile.bio Bio text
+     * @apiSuccess {int}                post.creator.following Following counter
+     * @apiSuccess {int}                post.creator.followers Followers counter
+     * @apiSuccess {boolean}            post.creator.isFollowing Already following this user
+     * @apiSuccess {String}             post.creator.createdAt Date registered
+     * @apiSuccess {Video}          post.video Video object
+     * @apiSuccess {String}             post.video.url Video file URL
+     * @apiSuccess {String[]}           post.video.thumbnails Thumbnails URLs
+     * @apiSuccess {int}                post.video.duration Video duration (seconds)
+     * @apiSuccess {int}            post.views Post views
+     * @apiSuccess {int}            post.uniqueViews Post unique views
+     * @apiSuccess {int}            post.comments Post comments
+     * @apiSuccess {String}         post.text Post text
+     */
+    .get(asyncMiddleware(async (req: express.Request, res: express.Response) => {
+        const postId: string = req.params.post;
+        const post = await getPostById(postId);
+
+        addViewToPost(post, req.user);
+
+        res.response({post: post});
+    }))
+
+    /**
+     * @api {patch} /post/:post Edit a post
+     * @apiName EditPost
+     * @apiGroup Post
+     *
+     * @apiParam {String} text Video text
+     *
+     * @apiSuccess {Post}     post Post object
+     * @apiSuccess {String}         post.id Post ID
+     * @apiSuccess {String}         post.createdAt Post creation date
+     * @apiSuccess {User}           post.creator Creator (user) object
+     * @apiSuccess {String}             post.creator.username Username
+     * @apiSuccess {Profile}            post.creator.profile User's profile metadata
+     * @apiSuccess {String}                 post.creator.profile.firstName First name
+     * @apiSuccess {String}                 post.creator.profile.lastName Last name
+     * @apiSuccess {Object}                 post.creator.profile.picture User's profile picture
+     * @apiSuccess {String}                     post.creator.profile.picture.url Url
+     * @apiSuccess {String}                     post.creator.profile.picture.thumbnail Thumbnail url
+     * @apiSuccess {String}                 post.creator.profile.bio Bio text
+     * @apiSuccess {int}                post.creator.following Following counter
+     * @apiSuccess {int}                post.creator.followers Followers counter
+     * @apiSuccess {boolean}            post.creator.isFollowing Already following this user
+     * @apiSuccess {String}             post.creator.createdAt Date registered
+     * @apiSuccess {Video}          post.video Video object
+     * @apiSuccess {String}             post.video.url Video file URL
+     * @apiSuccess {String[]}           post.video.thumbnails Thumbnails URLs
+     * @apiSuccess {int}                post.video.duration Video duration (seconds)
+     * @apiSuccess {int}            post.views Post views
+     * @apiSuccess {int}            post.uniqueViews Post unique views
+     * @apiSuccess {int}            post.comments Post comments
+     * @apiSuccess {String}         post.text Post text
+     */
+    .patch(asyncMiddleware(async (req: express.Request, res: express.Response) => {
+        const postId: string = req.params.post;
+        const text: string = req.body.text;
+        const post = await getPostById(postId);
+
+        req.checkBody({
+            "text": {
+                isLength: {
+                    options: [{
+                        min: SystemConfiguration.validations.postText.minLength,
+                        max: SystemConfiguration.validations.postText.maxLength
+                    }],
+                    errorMessage: "Post-text length is invalid"
+                }
+            }
+        });
+
+        if ( req.requestInvalid() ) {
+            return;
+        }
+
+        post.text = text;
+
+        if ( post.isModified() ) {
+            post
+                .save()
+                .then(() => {})
+                .catch(() => {});
+        }
+
+        res.response({post: post});
+    }))
+
+    /**
+     * @api {delete} /post Remove a post
+     * @apiName RemovePost
+     * @apiGroup Post
+     */
+    .delete((req: express.Request, res: express.Response) => {
+        res.response();
+    });
 
 
 /**
- * @api {get} /post/:post Get post by ID
- * @apiName GetPost
- * @apiGroup Post
- *
- * @apiSuccess {Post}     post Post object
- * @apiSuccess {String}         post.id Post ID
- * @apiSuccess {String}         post.createdAt Post creation date
- * @apiSuccess {User}           post.creator Creator (user) object
- * @apiSuccess {String}             post.creator.username Username
- * @apiSuccess {Profile}            post.creator.profile User's profile metadata
- * @apiSuccess {String}                 post.creator.profile.firstName First name
- * @apiSuccess {String}                 post.creator.profile.lastName Last name
- * @apiSuccess {Object}                 post.creator.profile.picture User's profile picture
- * @apiSuccess {String}                     post.creator.profile.picture.url Url
- * @apiSuccess {String}                     post.creator.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}                 post.creator.profile.bio Bio text
- * @apiSuccess {int}                post.creator.following Following counter
- * @apiSuccess {int}                post.creator.followers Followers counter
- * @apiSuccess {boolean}            post.creator.isFollowing Already following this user
- * @apiSuccess {String}             post.creator.createdAt Date registered
- * @apiSuccess {Video}          post.video Video object
- * @apiSuccess {String}             post.video.url Video file URL
- * @apiSuccess {String[]}           post.video.thumbnails Thumbnails URLs
- * @apiSuccess {int}                post.video.duration Video duration (seconds)
- * @apiSuccess {int}            post.views Post views
- * @apiSuccess {int}            post.uniqueViews Post unique views
- * @apiSuccess {int}            post.comments Post comments
- * @apiSuccess {String}         post.text Post text
- */
-router.get("/:post", (req: express.Request, res: express.Response) => {
-    res.response({post: PostStub});
-});
-
-
-/**
- * @api {patch} /post/:post Edit a post
- * @apiName EditPost
- * @apiGroup Post
- *
- * @apiParam {String} video Video <code>base64</code>
- * @apiParam {String} text Video text
- *
- * @apiSuccess {Post}     post Post object
- * @apiSuccess {String}         post.id Post ID
- * @apiSuccess {String}         post.createdAt Post creation date
- * @apiSuccess {User}           post.creator Creator (user) object
- * @apiSuccess {String}             post.creator.username Username
- * @apiSuccess {Profile}            post.creator.profile User's profile metadata
- * @apiSuccess {String}                 post.creator.profile.firstName First name
- * @apiSuccess {String}                 post.creator.profile.lastName Last name
- * @apiSuccess {Object}                 post.creator.profile.picture User's profile picture
- * @apiSuccess {String}                     post.creator.profile.picture.url Url
- * @apiSuccess {String}                     post.creator.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}                 post.creator.profile.bio Bio text
- * @apiSuccess {int}                post.creator.following Following counter
- * @apiSuccess {int}                post.creator.followers Followers counter
- * @apiSuccess {boolean}            post.creator.isFollowing Already following this user
- * @apiSuccess {String}             post.creator.createdAt Date registered
- * @apiSuccess {Video}          post.video Video object
- * @apiSuccess {String}             post.video.url Video file URL
- * @apiSuccess {String[]}           post.video.thumbnails Thumbnails URLs
- * @apiSuccess {int}                post.video.duration Video duration (seconds)
- * @apiSuccess {int}            post.views Post views
- * @apiSuccess {int}            post.uniqueViews Post unique views
- * @apiSuccess {int}            post.comments Post comments
- * @apiSuccess {String}         post.text Post text
- */
-router.patch("/:post", (req: express.Request, res: express.Response) => {
-    res.response({post: PostStub});
-});
-
-
-/**
- * @api {delete} /post Remove a post
- * @apiName RemovePost
- * @apiGroup Post
- */
-router.delete("/:post", (req: express.Request, res: express.Response) => {
-    res.response();
-});
-
-
-/**
- * @api {get} /post/:post/comments Post's comments
+ * @api {get} /post/:post/comments?page=1 Post's comments
  * @apiName GetComments
  * @apiGroup Post
- *
- * @apiParam {int} page Page
  *
  * @apiSuccess {Comment[]}  comments Comment object
  * @apiSuccess {String}         comments.id Comment ID
@@ -161,6 +261,21 @@ router.delete("/:post", (req: express.Request, res: express.Response) => {
 router.get("/:post/comments", (req: express.Request, res: express.Response) => {
     res.response(commentsWithPaginationResponseStub(req));
 });
+
+
+/**
+ * @api {post} /post/:post/view View a post
+ * @apiName ViewPost
+ * @apiGroup Post
+ */
+router.post("/:post/view", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const postId: string = req.params.post;
+    const post = await getPostById(postId);
+
+    addViewToPost(post, req.user);
+
+    res.response();
+}));
 
 
 /**
@@ -194,11 +309,9 @@ router.post("/:post/comment", (req: express.Request, res: express.Response) => {
 
 
 /**
- * @api {post} /post/bookmarked Bookmarked posts
+ * @api {post} /post/bookmarked?page=1 Bookmarked posts
  * @apiName Bookmarks
  * @apiGroup Post
- *
- * @apiParam {int} page Page
  *
  * @apiSuccess {Post[]}     posts Post objects
  * @apiSuccess {String}         posts.id Post ID
@@ -236,25 +349,39 @@ router.get("/bookmarked", (req: express.Request, res: express.Response) => {
     res.response(postsWithPaginationResponseStub(req));
 });
 
+router
+    .route("/:post/bookmark")
 
-/**
- * @api {post} /post/:post/bookmark Bookmark a post
- * @apiName BookmarkPost
- * @apiGroup Post
- */
-router.post("/:post/bookmark", (req: express.Request, res: express.Response) => {
-    res.response();
-});
+    /**
+     * @api {post} /post/:post/bookmark Bookmark a post
+     * @apiName BookmarkPost
+     * @apiGroup Post
+     */
+    .post(asyncMiddleware(async (req: express.Request, res: express.Response) => {
+        const postId: string = req.params.post;
+        const post = await getPostById(postId);
 
+        // TODO: Check if user already bookmarked this post
 
-/**
- * @api {delete} /post/:post/bookmark Remove post from bookmarks
- * @apiName UnBookmarkPost
- * @apiGroup Post
- */
-router.delete("/:post/bookmark", (req: express.Request, res: express.Response) => {
-    res.response();
-});
+        post.bookmarked.push(req.user._id);
+
+        if ( post.isModified() ) {
+            post.save()
+                .then(() => {})
+                .catch(() => {});
+        }
+
+        res.response();
+    }))
+
+    /**
+     * @api {delete} /post/:post/bookmark Remove post from bookmarks
+     * @apiName UnBookmarkPost
+     * @apiGroup Post
+     */
+    .delete((req: express.Request, res: express.Response) => {
+        res.response();
+    });
 
 
 /**

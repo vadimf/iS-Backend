@@ -99,19 +99,25 @@ app.use(function(req, res, next) {
 
         if ( e instanceof AppError ) {
             error = e;
+
+            console.log("System error", e);
         }
         else {
             error = AppError.ErrorPerformingAction;
 
             if ( ! meta ) {
                 meta = e;
+
+                console.log("System exception", e);
             }
         }
 
         return res.status(error.statusCode).json({
             errorCode: error.errorCode,
             errorDescription: error.errorDescription,
-            meta: meta
+            meta: ! isNullOrUndefined(meta) && ! isNullOrUndefined(meta.message) ? {
+                "exceptionMessage": meta.message
+            } : meta
         });
     };
 
@@ -136,6 +142,12 @@ app.use(function(req, res, next) {
     next();
 });
 
+export const asyncMiddleware = (fn: (req: any, res: any, next: any) => Promise<any>) =>
+    (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        Promise.resolve(fn(req, res, next))
+            .catch(next);
+    };
+
 
 /**
  * Controllers (route handlers).
@@ -151,8 +163,7 @@ import {default as CommentRouter} from "./controllers/comment/comment";
 import {default as DiscoverRouter} from "./controllers/discover/discover";
 import {default as SystemRouter} from "./controllers/system/system";
 import {isAuthenticated} from "./config/passport";
-import {error} from "util";
-
+import {isNullOrUndefined} from "util";
 
 /**
  * Primary app routes.
@@ -162,13 +173,25 @@ app.use("/v1/system", SystemRouter);
 
 // Protected requests
 // TODO: Add authentication middleware to all of the routes below
-app.use("/v1/notifications", NotificationsRouter);
-app.use("/v1/user", isAuthenticated, UserRouter);
-app.use("/v1/feed", FeedRouter);
-app.use("/v1/search", SearchRouter);
-app.use("/v1/post", PostRouter);
-app.use("/v1/comment", CommentRouter);
-app.use("/v1/discover", DiscoverRouter);
+app.use("/v1/user",                 isAuthenticated,        UserRouter);
+app.use("/v1/notifications",        isAuthenticated,        NotificationsRouter);
+app.use("/v1/feed",                 isAuthenticated,        FeedRouter);
+app.use("/v1/search",               isAuthenticated,      SearchRouter);
+app.use("/v1/post",                 isAuthenticated,        PostRouter);
+app.use("/v1/comment",              isAuthenticated,        CommentRouter);
+app.use("/v1/discover",             isAuthenticated,        DiscoverRouter);
+app.post("/v1/search/posts", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TESTING
+    throw AppError.UserDoesNotExist;
+});
+
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if ( err ) {
+        res.error(err);
+    }
+
+    // next(err);
+});
+
 
 
 /**

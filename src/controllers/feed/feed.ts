@@ -4,13 +4,11 @@ import {postsWithPaginationResponseStub} from "../../models/post";
 const router = express.Router();
 
 /**
- * @api {get} /feed Get posts feed
+ * @api {get} /feed?page=1 Get posts feed
  * @apiName Get
  * @apiGroup Feed
  *
- * @apiParam {int} page Page
- *
- * @apiSuccess {Post[]}     post Post objects
+ * @apiSuccess {Post[]}     posts Post objects
  * @apiSuccess {String}         posts.id Post ID
  * @apiSuccess {String}         posts.createdAt Post creation date
  * @apiSuccess {User}           posts.creator Creator (user) object
@@ -43,6 +41,8 @@ const router = express.Router();
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/", (req: express.Request, res: express.Response) => {
+
+
     res.response(postsWithPaginationResponseStub(req));
 });
 

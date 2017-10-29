@@ -1,17 +1,16 @@
 import * as express from "express";
 import {Pagination} from "../../models/pagination";
-import {ForeignUserStub} from "../../models/user";
-import {postsWithPaginationResponseStub} from "../../models/post";
+import {foreignUsersArray, User} from "../../models/user";
+import {Post} from "../../models/post";
+import {Utilities} from "../../utilities/utilities";
+import {asyncMiddleware} from "../../server";
 
 const router = express.Router();
 
 /**
- * @api {get} /search/posts Search posts by query
+ * @api {get} /search/posts?query=Maty&page=1 Search posts by query
  * @apiName SearchPosts
  * @apiGroup Search
- *
- * @apiParam {int} page Page
- * @apiParam {String} query Query string
  *
  * @apiSuccess {Post[]}     posts Post object
  * @apiSuccess {String}         posts.id Post ID
@@ -37,17 +36,29 @@ const router = express.Router();
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.get("/posts", (req: express.Request, res: express.Response) => {
-    res.response(postsWithPaginationResponseStub(req));
-});
+router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const searchQuery: string = req.query.query;
+    const searchRegex = Utilities.stringToRegExp("/.*" + searchQuery + ".*/i");
+    const page: number = +req.query.page;
+    const totalResults = await Post.count({text: searchRegex});
+    const pagination = new Pagination(page, totalResults);
+
+    const posts = await Post
+        .find({text: searchRegex})
+        .populate("creator")
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset);
+
+    res.response({
+        users: posts,
+        pagination: pagination
+    });
+}));
 
 /**
- * @api {get} /search/users Search users by query
+ * @api {search} /search/users?query=Maty&page=1 Search users by query
  * @apiName SearchUsers
  * @apiGroup Search
- *
- * @apiParam {String} query Query string (username)
- * @apiParam {int} page Page
  *
  * @apiSuccess {User[]}     users Foreign user object
  * @apiSuccess {String}         users.username Username
@@ -70,13 +81,22 @@ router.get("/posts", (req: express.Request, res: express.Response) => {
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.post("/users", (req: express.Request, res: express.Response) => {
-    const pagination = new Pagination(1, 3, 50);
+router.get("/users", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const searchQuery: string = req.query.query;
+    const searchRegex = Utilities.stringToRegExp("/.*" + searchQuery + ".*/i");
+    const page: number = +req.query.page;
+    const totalResults = await User.count({username: searchRegex});
+    const pagination = new Pagination(page, totalResults);
+
+    const users = await User
+        .find({username: searchRegex})
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset);
 
     res.response({
-        users: [ForeignUserStub, ForeignUserStub, ForeignUserStub],
+        users: foreignUsersArray(users),
         pagination: pagination
     });
-});
+}));
 
 export default router;

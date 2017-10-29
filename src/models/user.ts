@@ -29,7 +29,7 @@ export const ProfileSchema = new mongoose.Schema(
 
 export interface IAuthToken {
     authToken: string;
-    firebaseToken: string;
+    firebaseToken?: string;
 }
 
 export const AuthTokenSchema = new mongoose.Schema(
@@ -110,12 +110,7 @@ export const UserSchema = new mongoose.Schema(
         },
         profile: {
             type: ProfileSchema
-        },
-        following: [{
-            // TODO: Check with Tomer: How
-            type: mongoose.SchemaTypes.ObjectId,
-            ref: "User"
-        }]
+        }
     },
     {
         timestamps: true
@@ -127,8 +122,8 @@ UserSchema.methods.toLoggedUser = function(): ILoggedUser {
         email: this.email,
         phone: this.phone,
         profile: <IUserProfile>this.profile,
-        followers: 0,
-        following: 0,
+        followers: 0, // TODO: Ask Tomer, how to make a counter from Follows document
+        following: 0, // TODO: Ask Tomer, how to make a counter from Follows document
         createdAt: this.createdAt
     };
 };
@@ -136,8 +131,8 @@ UserSchema.methods.toForeignUser = function(): IForeignUser {
     return {
         username: this.username,
         profile: this.profile,
-        followers: 0,
-        following: 0,
+        followers: 0, // TODO: Ask Tomer, how to make a counter from Follows document
+        following: 0, // TODO: Ask Tomer, how to make a counter from Follows document
         isFollowing: false,
         createdAt: this.createdAt
     };

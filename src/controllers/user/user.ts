@@ -1,11 +1,10 @@
 import * as express from "express";
-import {ForeignUserStub} from "../../models/user";
 import {Pagination} from "../../models/pagination";
 import {postsWithPaginationResponseStub} from "../../models/post";
 import {updateUserDetails} from "./update-user";
-import {AppError} from "../../models/app-error";
-import {Follower} from "../../models/follow";
+import {Follower, followersToForeignUsersArray} from "../../models/follow";
 import {default as ForeignUserRouter} from "./foreign-user-router";
+import {asyncMiddleware} from "../../server";
 
 const router = express.Router();
 
@@ -74,43 +73,30 @@ router
      * @apiSuccess {int}            user.following Following counter
      * @apiSuccess {int}            user.followers Followers counter
      * @apiSuccess {String}         user.createdAt Date registered
-     */
-    .patch(async (req: express.Request, res: express.Response) => {
-        updateUserDetails(req)
-            .then(() => {
-                if ( req.requestInvalid() ) {
-                    return;
-                }
-
-                if ( req.user.isModified() ) {
-                    req.user.save();
-                }
-
-                res.response({user: req.user.toLoggedUser()});
-            })
-            .catch((error) => {
-                res.error(error);
-            });
-    })
-
-    /**
-     * @api {delete} /user Disable a user
-     * @apiName DisableMyUser
-     * @apiGroup User
      *
-     * @apiParam {String} reason Disable reason
+     * @apiUse UsernameAlreadyTaken
+     * @apiUse UploadingError
+     * @apiUse RequestValidation
      */
-    .delete((req: express.Request, res: express.Response) => {
-        res.response();
-    });
+    .patch(asyncMiddleware(async (req: express.Request, res: express.Response) => {
+        await updateUserDetails(req);
+
+        if ( req.requestInvalid() ) {
+            return;
+        }
+
+        if ( req.user.isModified() ) {
+            req.user.save();
+        }
+
+        res.response({user: req.user.toLoggedUser()});
+    }));
 
 
 /**
- * @api {get} /user/following Followed by me
+ * @api {get} /user/following?page=1 Followed by me
  * @apiName FollowedByMe
  * @apiGroup User
- *
- * @apiParam {int} page Page
  *
  * @apiSuccess {User[]}     users Foreign user object
  * @apiSuccess {String}         users.username Username
@@ -133,51 +119,28 @@ router
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.get("/following", async (req: express.Request, res: express.Response) => {
-    try {
-        const totalFollowing: number = await Follower.count({follower: req.user._id});
-        const page: number = +req.query.page;
+router.get("/following", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const page: number = +req.query.page;
+    const totalFollowers = await Follower.count({follower: req.user._id});
+    const pagination = new Pagination(page, totalFollowers);
 
-        const pagination = new Pagination(page, totalFollowing);
+    const followers = await Follower
+        .find({follower: req.user._id})
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset)
+        .populate("following");
 
-        const followingUsers = await Follower.find({follower: req.user._id});
-
-        console.log(followingUsers);
-
-        res.response({
-            pagination: pagination
-        });
-    }
-    catch (e) {
-        res.error(AppError.ErrorPerformingAction, e);
-    }
-
-    // Follower
-    //     .findOne({
-    //         follower:
-    //     })
-    //     .populate("following")
-    //     .then((f) => {
-    //         console.log(f.following);
-    //     })
-    //     .catch(console.log);
-    //
-    //
-    // const pagination = new Pagination(1, 3, 50);
-    //
-    // res.response({
-    //     users: [ForeignUserStub, ForeignUserStub, ForeignUserStub],
-    //     pagination: pagination
-    // });
-});
+    res.response({
+        users: followersToForeignUsersArray(followers),
+        pagination: pagination
+    });
+}));
 
 
 /**
- * @api {get} /user/following Following me
+ * @api {get} /user/followers?page=1 Following me
  * @apiName FollowingMe
  * @apiGroup User
- *
- * @apiParam {int} page Page
  *
  * @apiSuccess {User[]}     users Foreign user object
  * @apiSuccess {String}         users.username Username
@@ -200,22 +163,28 @@ router.get("/following", async (req: express.Request, res: express.Response) => 
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.get("/followers", (req: express.Request, res: express.Response) => {
-    const pagination = new Pagination(1, 3, 50);
+router.get("/followers", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const page: number = +req.query.page;
+    const totalFollowers = await Follower.count({following: req.user._id});
+    const pagination = new Pagination(page, totalFollowers);
+
+    const followers = await Follower
+        .find({following: req.user._id})
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset)
+        .populate("follower");
 
     res.response({
-        users: [ForeignUserStub, ForeignUserStub, ForeignUserStub],
+        users: followersToForeignUsersArray(followers),
         pagination: pagination
     });
-});
+}));
 
 
 /**
- * @api {get} /user/posts My posts
+ * @api {get} /user/posts?page=1 My posts
  * @apiName MyPosts
  * @apiGroup User
- *
- * @apiParam {int} page Page
  *
  * @apiSuccess {Post[]}     posts Post objects
  * @apiSuccess {String}         posts.id Post ID

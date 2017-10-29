@@ -32,8 +32,14 @@ const LastNameValidation = {
     regex               : "/\\b[^\\d\\W]+\\b/"
 };
 
+const PostTextValidation = {
+    minLength           : 0,
+    maxLength           : 255
+};
+
 const BioValidation = {
-    maxLength           : 250
+    minLength           : 0,
+    maxLength           : 255
 };
 
 export class SystemConfiguration {
@@ -50,7 +56,8 @@ export class SystemConfiguration {
             username: UsernameValidation,
             firstName: FirstNameValidation,
             lastName: LastNameValidation,
-            bio: BioValidation
+            bio: BioValidation,
+            postText: PostTextValidation
         };
     }
 

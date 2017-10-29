@@ -8,6 +8,7 @@ import {IPhoneNumber} from "../../models/phone-number";
 import {IAuthToken, IUserModel, User} from "../../models/user";
 import {SystemConfiguration} from "../../models/system-vars";
 import {isAuthenticated} from "../../config/passport";
+import {asyncMiddleware} from "../../server";
 
 
 const router = express.Router();
@@ -100,7 +101,7 @@ function sendConfirmationSms(phoneConfirmationRequest: IPhoneConfirmationRequest
  *
  * @apiUse ErrorPerformingAction
  */
-router.post("/phone/request", async (req: express.Request, res: express.Response) => {
+router.post("/phone/request", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const phoneNumber: IPhoneNumber = getPhoneNumberFromRequest(req);
 
     if ( req.requestInvalid() ) {
@@ -110,16 +111,11 @@ router.post("/phone/request", async (req: express.Request, res: express.Response
     const phoneConfirmationRequest = new PhoneConfirmationRequest(phoneNumber);
     phoneConfirmationRequest.code = Utilities.randomString(SystemConfiguration.confirmationCodeLength, "0123456789");
 
-    try {
-        await sendConfirmationSms(phoneConfirmationRequest);
-        await phoneConfirmationRequest.save();
+    await sendConfirmationSms(phoneConfirmationRequest);
+    await phoneConfirmationRequest.save();
 
-        res.response();
-    }
-    catch (e) {
-        res.error(e);
-    }
-});
+    res.response();
+}));
 
 
 /**
@@ -151,10 +147,11 @@ router.post("/phone/request", async (req: express.Request, res: express.Response
  * @apiSuccess {int}            user.followers Followers counter
  * @apiSuccess {String}         user.createdAt Date registered
  * @apiSuccess {String}     auth Authentication token to send in header
+ *
+ * @apiUse ObjectDoesNotExist
+ * @apiUse ErrorPerformingAction
  */
-router.post("/phone/verify", async (req: express.Request, res: express.Response) => {
-    console.log(req.body);
-
+router.post("/phone/verify", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const phoneNumber: IPhoneNumber = getPhoneNumberFromRequest(req);
     const confirmationCode: string = req.body.code;
 
@@ -169,18 +166,13 @@ router.post("/phone/verify", async (req: express.Request, res: express.Response)
         return;
     }
 
-    try {
-        const userAuthentication = await authenticateUser(phoneNumber, confirmationCode);
+    const userAuthentication = await authenticateUser(phoneNumber, confirmationCode);
 
-        res.response({
-            user: userAuthentication.user.toLoggedUser(),
-            token: userAuthentication.authToken.authToken
-        });
-    }
-    catch (e) {
-        res.error(AppError.ErrorPerformingAction, e.message);
-    }
-});
+    res.response({
+        user: userAuthentication.user.toLoggedUser(),
+        token: userAuthentication.authToken.authToken
+    });
+}));
 
 
 /**

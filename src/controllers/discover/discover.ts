@@ -5,9 +5,9 @@ import {ForeignUserStub} from "../../models/user";
 const router = express.Router();
 
 /**
- * @api {get} /search/users Search users by query
- * @apiName SearchUsers
- * @apiGroup Search
+ * @api {post} /discover/contacts By contacts
+ * @apiName DiscoverContent
+ * @apiGroup Discover
  *
  * @apiParam {PhoneNumber[]} phones Phone number object array
  * @apiParam {String} phones.country Country code
@@ -36,12 +36,9 @@ router.post("/contacts", (req: express.Request, res: express.Response) => {
 
 
 /**
- * @api {get} /search/users Search users by query
- * @apiName SearchUsers
- * @apiGroup Search
- *
- * @apiParam {String} query Query string (username)
- * @apiParam {int} page Page
+ * @api {get} /discover/suggestions?page=1 Suggestions
+ * @apiName DiscoverSuggestions
+ * @apiGroup Discover
  *
  * @apiSuccess {User[]}     users Foreign user object
  * @apiSuccess {String}         users.username Username

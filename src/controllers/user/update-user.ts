@@ -7,6 +7,12 @@ import {AppError} from "../../models/app-error";
 import fs = require("fs");
 import sharp = require("sharp");
 
+/**
+ * Update all user details: Profile image, first name, last name, bio
+ *
+ * @param {e.Request} req
+ * @returns {Promise<void>}
+ */
 export async function updateUserDetails(req: express.Request) {
     if ( req.body.user ) {
         await updateUsername(req);
@@ -25,7 +31,11 @@ export async function updateUserDetails(req: express.Request) {
     }
 }
 
-
+/**
+ * Update the user's email address
+ *
+ * @param {e.Request} req
+ */
 function updateEmail(req: express.Request) {
     if ( req.body.user.email ) {
         req.checkBody({
@@ -40,7 +50,11 @@ function updateEmail(req: express.Request) {
     }
 }
 
-
+/**
+ * Update the user's first name
+ *
+ * @param {e.Request} req
+ */
 function updateFirstName(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.firstName) ) {
         req.checkBody({
@@ -63,7 +77,11 @@ function updateFirstName(req: express.Request) {
     }
 }
 
-
+/**
+ * Update the user's last name
+ *
+ * @param {e.Request} req
+ */
 function updateLastName(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.lastName) ) {
         req.checkBody({
@@ -86,7 +104,11 @@ function updateLastName(req: express.Request) {
     }
 }
 
-
+/**
+ * Update the user's bio
+ *
+ * @param {e.Request} req
+ */
 function updateBio(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.bio) ) {
         req.checkBody({
@@ -105,7 +127,12 @@ function updateBio(req: express.Request) {
     }
 }
 
-
+/**
+ * Update the user's profile image
+ *
+ * @param {e.Request} req
+ * @returns {Promise<void>}
+ */
 async function updateProfileImage(req: express.Request) {
     if ( ! req.body.user.profile.picture ) {
         return;
@@ -196,9 +223,14 @@ async function updateProfileImage(req: express.Request) {
     }
 }
 
-
+/**
+ * Update the user's username
+ *
+ * @param {e.Request} req
+ * @returns {Promise<void>}
+ */
 async function updateUsername(req: express.Request) {
-    if ( ! req.body.user.username ) {
+    if ( ! req.body.user.username && req.user.username ) {
         return;
     }
 

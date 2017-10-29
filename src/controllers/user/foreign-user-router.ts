@@ -1,10 +1,11 @@
 import * as express from "express";
-import {foreignUsersArray, ForeignUserStub, User} from "../../models/user";
+import {User} from "../../models/user";
 import {Pagination} from "../../models/pagination";
 import {postsWithPaginationResponseStub} from "../../models/post";
 import {AppError} from "../../models/app-error";
 import {followUser, unfollowUser} from "./follow-user";
 import {Follower, followersToForeignUsersArray, followingUsersToForeignUsersArray} from "../../models/follow";
+import {asyncMiddleware} from "../../server";
 
 const router = express.Router({mergeParams: true});
 
@@ -20,7 +21,7 @@ async function getUserByUsername(username: string) {
 
     if ( ! user ) {
         console.log("User not found", username);
-        throw AppError.ObjectDoesNotExist;
+        throw AppError.UserDoesNotExist;
     }
 
     return user;
@@ -45,26 +46,17 @@ async function getUserByUsername(username: string) {
  * @apiSuccess {int}            user.followers Followers counter
  * @apiSuccess {boolean}        user.isFollowing Already following this user
  * @apiSuccess {String}         user.createdAt Date registered
+ *
+ * @apiUse UserDoesNotExist
  */
-router.get("/", async (req: express.Request, res: express.Response) => {
+router.get("/", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const username: string = req.params.username;
+    const foundUser = await getUserByUsername(username);
 
-    /*
-        TODO: Check with Tomer: Is there a way of checking the exception in another place, rather than in every route?
-        - In such way that if the exception is instance of AppError, res.error(e) will be used, otherwise, res.error(AppError.ErrorPerformingAction, e) will be used
-     */
-
-    try {
-        const foundUser = await getUserByUsername(username);
-
-        res.response({
-            user: foundUser.toForeignUser()
-        });
-    }
-    catch (e) {
-        res.error(e);
-    }
-});
+    res.response({
+        user: foundUser.toForeignUser()
+    });
+}));
 
 
 /**
@@ -75,7 +67,7 @@ router.get("/", async (req: express.Request, res: express.Response) => {
  * @apiParam {String} vars Not ready yet...
  */
 // TODO: Prepare report reason enum
-router.post("/report", (req: express.Request, res: express.Response) => {
+router.post("/report", (req: express.Request, res: express.Response, next: express.NextFunction) => {
     res.response();
 });
 
@@ -87,58 +79,42 @@ router
      * @api {post} /user/:username/follow Follow a user
      * @apiName FollowUser
      * @apiGroup User
+     *
+     * @apiUse UserDoesNotExist
+     * @apiUse ObjectExist
      */
-    .post(async (req: express.Request, res: express.Response) => {
-        console.log(req.params);
-
+    .post(asyncMiddleware(async (req: express.Request, res: express.Response) => {
         const username: string = req.params.username;
+        const foundUser = await getUserByUsername(username);
 
-        /*
-            TODO: Check with Tomer: Is there a way of checking the exception in another place, rather than in every route?
-            - In such way that if the exception is instance of AppError, res.error(e) will be used, otherwise, res.error(AppError.ErrorPerformingAction, e) will be used
-            - That way, the code for this route would be much shorter
-         */
+        await followUser(req.user, foundUser);
 
-        try {
-            const foundUser = await getUserByUsername(username);
-
-            await followUser(req.user, foundUser);
-
-            res.response();
-        }
-        catch (e) {
-            res.error(e);
-        }
-    })
+        res.response();
+    }))
 
     /**
      * @api {delete} /user/:username/follow Unfollow a user
      * @apiName UnfollowUser
      * @apiGroup User
+     *
+     * @apiUse UserDoesNotExist
+     * @apiUse ObjectDoesNotExist
      */
-    .delete(async (req: express.Request, res: express.Response) => {
+    .delete(asyncMiddleware(async (req: express.Request, res: express.Response) => {
         const username: string = req.params.username;
+        const foundUser = await getUserByUsername(username);
 
-        try {
-            const foundUser = await getUserByUsername(username);
+        await unfollowUser(req.user, foundUser);
 
-            await unfollowUser(req.user, foundUser);
-
-            res.response();
-        }
-        catch (e) {
-            res.error(e);
-        }
-    });
+        res.response();
+    }));
 
 
 /**
- * @api {get} /user/:username/following Followed by user
+ * @api {get} /user/:username/following?page=1 Followed by user
  * @apiName FollowedByUser
  * @apiGroup User
  *
- * @apiParam {int} page Page
- *
  * @apiSuccess {User[]}     users Foreign user object
  * @apiSuccess {String}         users.username Username
  * @apiSuccess {Profile}        users.profile User's profile metadata
@@ -159,35 +135,34 @@ router
  * @apiSuccess {int}                pagination.results Total results
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
+ *
+ * @apiUse UserDoesNotExist
  */
-router.get("/following", async (req: express.Request, res: express.Response) => {
+router.get("/following", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const username: string = req.params.username;
     const page: number = +req.query.page;
+    const user = await getUserByUsername(username);
+    const totalFollowers = await Follower.count({follower: user._id});
+    const pagination = new Pagination(page, totalFollowers);
 
-    try {
-        const user = await getUserByUsername(username);
-        const totalFollowers = await Follower.count({follower: user._id});
-        const pagination = new Pagination(page, totalFollowers);
-        const following = await Follower.find({follower: user._id}).populate("following"); // TODO: Add pagination
+    const following = await Follower
+        .find({follower: user._id})
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset)
+        .populate("following");
 
-        res.response({
-            users: followingUsersToForeignUsersArray(following),
-            pagination: pagination
-        });
-    }
-    catch (e) {
-        res.error(e);
-    }
-});
+    res.response({
+        users: followingUsersToForeignUsersArray(following),
+        pagination: pagination
+    });
+}));
 
 
 /**
- * @api {get} /user/:username/followers User's followers
+ * @api {get} /user/:username/followers?page=1 User's followers
  * @apiName FollowingUser
  * @apiGroup User
  *
- * @apiParam {int} page Page
- *
  * @apiSuccess {User[]}     users Foreign user object
  * @apiSuccess {String}         users.username Username
  * @apiSuccess {Profile}        users.profile User's profile metadata
@@ -208,34 +183,33 @@ router.get("/following", async (req: express.Request, res: express.Response) => 
  * @apiSuccess {int}                pagination.results Total results
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
+ *
+ * @apiUse UserDoesNotExist
  */
-router.get("/followers", async (req: express.Request, res: express.Response) => {
+router.get("/followers", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const username: string = req.params.username;
     const page: number = +req.query.page;
+    const user = await getUserByUsername(username);
+    const totalFollowers = await Follower.count({following: user._id});
+    const pagination = new Pagination(page, totalFollowers);
 
-    try {
-        const user = await getUserByUsername(username);
-        const totalFollowers = await Follower.count({following: user._id});
-        const pagination = new Pagination(page, totalFollowers);
-        const followers = await Follower.find({following: user._id}).populate("follower"); // TODO: Add pagination
+    const followers = await Follower
+        .find({following: user._id})
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset)
+        .populate("follower");
 
-        res.response({
-            users: followersToForeignUsersArray(followers),
-            pagination: pagination
-        });
-    }
-    catch (e) {
-        res.error(e);
-    }
-});
+    res.response({
+        users: followersToForeignUsersArray(followers),
+        pagination: pagination
+    });
+}));
 
 
 /**
- * @api {get} /user/:username/posts User's posts
+ * @api {get} /user/:username/posts?page=1 User's posts
  * @apiName UserPosts
  * @apiGroup User
- *
- * @apiParam {int} page Page
  *
  * @apiSuccess {Post[]}     posts Post objects
  * @apiSuccess {String}         posts.id Post ID
@@ -268,6 +242,8 @@ router.get("/followers", async (req: express.Request, res: express.Response) => 
  * @apiSuccess {int}                pagination.results Total results
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
+ *
+ * @apiUse UserDoesNotExist
  */
 router.get("/posts", (req: express.Request, res: express.Response) => {
     res.response(postsWithPaginationResponseStub(req));
