@@ -2,7 +2,7 @@ import * as express from "express";
 import {Pagination} from "../../models/pagination";
 import {postsWithPaginationResponseStub} from "../../models/post";
 import {updateUserDetails} from "./update-user";
-import {Follower, followersToForeignUsersArray} from "../../models/follow";
+import {countByConditions, Follower, followersToForeignUsersArray, followingUsersToForeignUsersArray, getByConditions} from "../../models/follow";
 import {default as ForeignUserRouter} from "./foreign-user-router";
 import {asyncMiddleware} from "../../server";
 
@@ -36,6 +36,8 @@ router
      * @apiSuccess {String}         user.createdAt Date registered
      */
     .get((req: express.Request, res: express.Response) => {
+        // TODO: Populate "followers" and "following" fields
+
         res.response({user: req.user.toLoggedUser()});
     })
 
@@ -85,6 +87,8 @@ router
             return;
         }
 
+        // TODO: Populate "followers" and "following" fields
+
         if ( req.user.isModified() ) {
             req.user.save();
         }
@@ -92,6 +96,20 @@ router
         res.response({user: req.user.toLoggedUser()});
     }));
 
+export async function getFollowsByConditions(conditions: any, followers = false, req: express.Request, res: express.Response) {
+    const page: number = +req.query.page;
+    const totalFollows = await countByConditions(conditions);
+    const pagination = new Pagination(page, totalFollows);
+
+    const follows = await getByConditions(conditions)
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset);
+
+    res.response({
+        users: followers ? followersToForeignUsersArray(follows) : followingUsersToForeignUsersArray(follows),
+        pagination: pagination
+    });
+}
 
 /**
  * @api {get} /user/following?page=1 Followed by me
@@ -120,20 +138,7 @@ router
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/following", asyncMiddleware(async (req: express.Request, res: express.Response) => {
-    const page: number = +req.query.page;
-    const totalFollowers = await Follower.count({follower: req.user._id});
-    const pagination = new Pagination(page, totalFollowers);
-
-    const followers = await Follower
-        .find({follower: req.user._id})
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset)
-        .populate("following");
-
-    res.response({
-        users: followersToForeignUsersArray(followers),
-        pagination: pagination
-    });
+    await getFollowsByConditions({follower: req.user._id}, false, req, res);
 }));
 
 
@@ -164,20 +169,7 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/followers", asyncMiddleware(async (req: express.Request, res: express.Response) => {
-    const page: number = +req.query.page;
-    const totalFollowers = await Follower.count({following: req.user._id});
-    const pagination = new Pagination(page, totalFollowers);
-
-    const followers = await Follower
-        .find({following: req.user._id})
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset)
-        .populate("follower");
-
-    res.response({
-        users: followersToForeignUsersArray(followers),
-        pagination: pagination
-    });
+    await getFollowsByConditions({following: req.user._id}, true, req, res);
 }));
 
 

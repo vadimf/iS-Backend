@@ -26,6 +26,23 @@ async function getPostById(id: string) {
     return post;
 }
 
+/**
+ * Get a post owned by a user, by the post ID
+ *
+ * @param {string} id
+ * @param {IUserModel} user
+ * @returns {Promise<IPost>}
+ */
+async function getPostByIdOwnedByUser(id: string, user: IUserModel) {
+    const post = await getPostById(id);
+
+    if ( ! post.creator._id.equals(user._id) ) {
+        throw AppError.ObjectDoesNotExist;
+    }
+
+    return post;
+}
+
 function addViewToPost(post: IPost, user: IUserModel) {
     if ( post.creator._id.equals(user._id) ) {
         return;
@@ -188,7 +205,7 @@ router
     .patch(asyncMiddleware(async (req: express.Request, res: express.Response) => {
         const postId: string = req.params.post;
         const text: string = req.body.text;
-        const post = await getPostById(postId);
+        const post = await getPostByIdOwnedByUser(postId, req.user);
 
         req.checkBody({
             "text": {
@@ -223,9 +240,18 @@ router
      * @apiName RemovePost
      * @apiGroup Post
      */
-    .delete((req: express.Request, res: express.Response) => {
+    .delete(asyncMiddleware(async (req: express.Request, res: express.Response) => {
+        const postId: string = req.params.post;
+        const post = await getPostByIdOwnedByUser(postId, req.user);
+
+        // TODO: Remove post video file & thumbnails
+
+        post.remove()
+            .then(() => {})
+            .catch(() => {});
+
         res.response();
-    });
+    }));
 
 
 /**

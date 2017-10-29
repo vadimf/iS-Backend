@@ -45,3 +45,27 @@ export function followingUsersToForeignUsersArray(followingUsers: IFollowerModel
 }
 
 export const Follower = mongoose.model<IFollowerModel>("Follow", FollowerSchema, "follows");
+
+/**
+ * @param conditions
+ * @returns "mongoose".DocumentQuery<IFollowerModel[], IFollowerModel>
+ */
+export function getByConditions(conditions: any) {
+    // TODO: Check if following, change the boolean accordingly.
+    // TODO: Populate "followers" and "following" fields
+
+    return Follower
+        .find(conditions)
+        .populate("follower")
+        .populate("following");
+}
+
+/**
+ *
+ * @param conditions
+ * @returns "mongoose".Query<number>
+ */
+export function countByConditions(conditions: any) {
+    return Follower
+        .count(conditions);
+}

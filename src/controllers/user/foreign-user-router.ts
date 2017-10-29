@@ -6,6 +6,7 @@ import {AppError} from "../../models/app-error";
 import {followUser, unfollowUser} from "./follow-user";
 import {Follower, followersToForeignUsersArray, followingUsersToForeignUsersArray} from "../../models/follow";
 import {asyncMiddleware} from "../../server";
+import {getFollowsByConditions} from "./user";
 
 const router = express.Router({mergeParams: true});
 
@@ -52,6 +53,9 @@ async function getUserByUsername(username: string) {
 router.get("/", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const username: string = req.params.username;
     const foundUser = await getUserByUsername(username);
+
+    // TODO: Check if following, change the boolean accordingly.
+    // TODO: Populate "followers" and "following" fields
 
     res.response({
         user: foundUser.toForeignUser()
@@ -140,21 +144,9 @@ router
  */
 router.get("/following", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const username: string = req.params.username;
-    const page: number = +req.query.page;
     const user = await getUserByUsername(username);
-    const totalFollowers = await Follower.count({follower: user._id});
-    const pagination = new Pagination(page, totalFollowers);
 
-    const following = await Follower
-        .find({follower: user._id})
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset)
-        .populate("following");
-
-    res.response({
-        users: followingUsersToForeignUsersArray(following),
-        pagination: pagination
-    });
+    await getFollowsByConditions({follower: user._id}, false, req, res);
 }));
 
 
@@ -188,21 +180,9 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
  */
 router.get("/followers", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const username: string = req.params.username;
-    const page: number = +req.query.page;
     const user = await getUserByUsername(username);
-    const totalFollowers = await Follower.count({following: user._id});
-    const pagination = new Pagination(page, totalFollowers);
 
-    const followers = await Follower
-        .find({following: user._id})
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset)
-        .populate("follower");
-
-    res.response({
-        users: followersToForeignUsersArray(followers),
-        pagination: pagination
-    });
+    await getFollowsByConditions({following: user._id}, true, req, res);
 }));
 
 
