@@ -2,7 +2,9 @@ import * as mongoose from "mongoose";
 
 export interface IUserPicture {
     url: string;
+    path: string;
     thumbnail: string;
+    thumbnailPath: string;
 }
 
 export const UserPictureSchema = new mongoose.Schema(

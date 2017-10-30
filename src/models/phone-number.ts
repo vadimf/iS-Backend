@@ -1,6 +1,6 @@
 import * as mongoose from "mongoose";
 
-export interface IPhoneNumber {
+export interface IPhoneNumberModel {
     country: string;
     area: string;
     number: string;

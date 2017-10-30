@@ -42,6 +42,11 @@ const BioValidation = {
     maxLength           : 255
 };
 
+const PasswordValidation = {
+    minLength           : 6,
+    maxLength           : 24
+};
+
 export class SystemConfiguration {
     static get pages() {
         return StaticPages;
@@ -53,6 +58,7 @@ export class SystemConfiguration {
 
     static get validations() {
         return {
+            password: PasswordValidation,
             username: UsernameValidation,
             firstName: FirstNameValidation,
             lastName: LastNameValidation,

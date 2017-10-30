@@ -68,10 +68,30 @@ export class AppError {
      */
     static UsernameAlreadyTaken = new AppError(StatusCode.Conflict, 1000, "Username is already in use");
     /**
+     * @apiDefine EmailAlreadyTaken
+     * @apiError 1001 Email is already in use
+     */
+    static EmailAlreadyTaken = new AppError(StatusCode.Conflict, 1001, "Email is already in use");
+    /**
      * @apiDefine UploadingError
      * @apiError 2000 Uploading error
      */
     static UploadingError = new AppError(StatusCode.Forbidden, 2000, "Uploading error");
+    /**
+     * @apiDefine CannotAuthenticateViaThisMethod
+     * @apiError 3000 The password given doesn't match the user's password
+     */
+    static CannotAuthenticateViaThisMethod = new AppError(StatusCode.Unauthorized, 3000, "Cannot authenticate via this method");
+    /**
+     * @apiDefine PasswordDoesNotMatch
+     * @apiError 3001 The password given doesn't match the user's password
+     */
+    static PasswordDoesNotMatch = new AppError(StatusCode.Unauthorized, 3001, "Password doesn't match");
+    /**
+     * @apiDefine FacebookAuthenticationError
+     * @apiError 3002 There's been a problem authenticating with facebook
+     */
+    static FacebookAuthenticationError = new AppError(StatusCode.Unauthorized, 3002, "There's been a problem authenticating with facebook");
 }
 
 export class ApiException extends Error {

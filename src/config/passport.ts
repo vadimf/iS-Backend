@@ -1,6 +1,6 @@
 import * as express from "express";
 import {AppError} from "../models/app-error";
-import {IAuthToken, User} from "../models/user";
+import {IAuthTokenModel, User} from "../models/user";
 import * as _ from "underscore";
 
 export let isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -13,7 +13,7 @@ export let isAuthenticated = (req: express.Request, res: express.Response, next:
             if ( req.user ) {
                 const filteredTokens = _.filter(
                     req.user.tokens,
-                    (token: IAuthToken) => {
+                    (token: IAuthTokenModel) => {
                         return token.authToken === authToken;
                     }
                 );

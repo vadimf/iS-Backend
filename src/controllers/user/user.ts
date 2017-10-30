@@ -2,7 +2,7 @@ import * as express from "express";
 import {Pagination} from "../../models/pagination";
 import {postsWithPaginationResponseStub} from "../../models/post";
 import {updateUserDetails} from "./update-user";
-import {countByConditions, Follower, followersToForeignUsersArray, followingUsersToForeignUsersArray, getByConditions} from "../../models/follow";
+import {countByConditions, followersToForeignUsersArray, followingUsersToForeignUsersArray, getByConditions} from "../../models/follow";
 import {default as ForeignUserRouter} from "./foreign-user-router";
 import {asyncMiddleware} from "../../server";
 
@@ -77,6 +77,7 @@ router
      * @apiSuccess {String}         user.createdAt Date registered
      *
      * @apiUse UsernameAlreadyTaken
+     * @apiUse EmailAlreadyTaken
      * @apiUse UploadingError
      * @apiUse RequestValidation
      */

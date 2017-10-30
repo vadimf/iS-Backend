@@ -5,7 +5,7 @@ import {SystemConfiguration} from "../../models/system-vars";
 import {User} from "../../models/user";
 import {AppError} from "../../models/app-error";
 import fs = require("fs");
-import sharp = require("sharp");
+import {UploadProfilePicture} from "./upload-profile-picture";
 
 /**
  * Update all user details: Profile image, first name, last name, bio
@@ -36,7 +36,7 @@ export async function updateUserDetails(req: express.Request) {
  *
  * @param {e.Request} req
  */
-function updateEmail(req: express.Request) {
+async function updateEmail(req: express.Request) {
     if ( req.body.user.email ) {
         req.checkBody({
             "user[email]": {
@@ -45,6 +45,16 @@ function updateEmail(req: express.Request) {
                 }
             }
         });
+
+        const email: string = req.body.user.email;
+
+        if ( email ) {
+            const foundUser = await User.findOne({email: email});
+
+            if ( foundUser && ! foundUser._id.equals(req.user._id)) {
+                throw AppError.EmailAlreadyTaken;
+            }
+        }
 
         req.user.email = req.body.user.email;
     }
@@ -148,78 +158,45 @@ async function updateProfileImage(req: express.Request) {
 
     if ( ! req.requestInvalid() ) {
         const imageBase64 = req.body.user.profile.picture;
-        const buffer = new Buffer(imageBase64, "base64");
 
-        if (!fs.existsSync(process.env.UPLOADS_PATH)) {
-            fs.mkdir(process.env.UPLOADS_PATH, (err) => {
-                if (err) {
-                    console.log("Uploading error", err);
-                    throw AppError.UploadingError;
-                }
-            });
+        const uploadProfilePicture = new UploadProfilePicture(req.user._id.toString());
+
+        let uploadedProfilePictureData: any;
+        try {
+            uploadedProfilePictureData = await uploadProfilePicture
+                .base64(imageBase64)
+                .uploadUserProfilePicture();
+        }
+        catch (e) {
+            throw AppError.UploadingError;
         }
 
-        const uploadsPath = process.env.UPLOADS_PATH + "/" + req.user._id;
-        const uploadsUrl = process.env.UPLOADS_URL + "/" + req.user._id;
-
-        if ( ! fs.existsSync(uploadsPath) ) {
-            fs.mkdir(uploadsPath, (err) => {
-                if (err) {
-                    throw AppError.UploadingError;
-                }
-            });
-        }
-
-        const fileName = Utilities.randomString(32);
-        const thumbnailFileName = fileName + ".thumb";
-        const fileExtension = ".png";
-
-        const filePath = uploadsPath + "/" + fileName + fileExtension;
-        const thumbnailFilePath = uploadsPath + "/" + thumbnailFileName + fileExtension;
-
-        const fileUrl = uploadsUrl + "/" + fileName + fileExtension;
-        const thumbnailFileUrl = uploadsUrl + "/" + thumbnailFileName + fileExtension;
-
-        if ( ! req.user.profile.picture ) {
+        if (!req.user.profile.picture) {
             req.user.profile.picture = {};
         }
         else {
-            if ( req.user.profile.picture.path ) {
+            if (req.user.profile.picture.path) {
                 fs.unlink(req.user.profile.picture.path, (err) => {
-                    if ( err) {
+                    if (err) {
                         console.log("Error removing previous image", err);
                     }
                 });
             }
 
-            if ( req.user.profile.picture.thumbnailPath ) {
+            if (req.user.profile.picture.thumbnailPath) {
                 fs.unlink(req.user.profile.picture.thumbnailPath, (err) => {
-                    if ( err) {
+                    if (err) {
                         console.log("Error removing previous thumbnail", err);
                     }
                 });
             }
         }
 
-        const thumbnailCreationPromise = sharp(buffer)
-            .resize(200, 200)
-            .toFile(thumbnailFilePath);
-                //
-        const imageSavingPromise = sharp(buffer)
-            .toFile(filePath);
+        req.user.profile.picture.thumbnail = uploadedProfilePictureData.thumbnail.url;
+        req.user.profile.picture.thumbnailPath = uploadedProfilePictureData.thumbnail.path;
 
-        try {
-            await Promise.all([thumbnailCreationPromise, imageSavingPromise]);
-        }
-        catch (e) {
-            throw AppError.ErrorPerformingAction;
-        }
-
-        req.user.profile.picture.thumbnail = thumbnailFileUrl;
-        req.user.profile.picture.thumbnailPath = thumbnailFilePath;
-
-        req.user.profile.picture.url = fileUrl;
-        req.user.profile.picture.path = filePath;
+        req.user.profile.picture.url = uploadedProfilePictureData.picture.url;
+        req.user.profile.picture.path = uploadedProfilePictureData.picture.path;
     }
 }
 

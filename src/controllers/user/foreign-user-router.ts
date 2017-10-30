@@ -1,10 +1,8 @@
 import * as express from "express";
 import {User} from "../../models/user";
-import {Pagination} from "../../models/pagination";
 import {postsWithPaginationResponseStub} from "../../models/post";
 import {AppError} from "../../models/app-error";
 import {followUser, unfollowUser} from "./follow-user";
-import {Follower, followersToForeignUsersArray, followingUsersToForeignUsersArray} from "../../models/follow";
 import {asyncMiddleware} from "../../server";
 import {getFollowsByConditions} from "./user";
 

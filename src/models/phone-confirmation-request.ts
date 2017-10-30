@@ -1,5 +1,5 @@
 import * as mongoose from "mongoose";
-import {IPhoneNumber} from "./phone-number";
+import {IPhoneNumberModel} from "./phone-number";
 
 // export type IPhoneConfirmationRequest2 = mongoose.Document & {
 //     country: string
@@ -9,7 +9,7 @@ import {IPhoneNumber} from "./phone-number";
 //
 // };
 
-export interface IPhoneConfirmationRequest extends mongoose.Document, IPhoneNumber {
+export interface IPhoneConfirmationRequest extends mongoose.Document, IPhoneNumberModel {
     code: string;
 }
 
