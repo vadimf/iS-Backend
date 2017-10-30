@@ -1,10 +1,11 @@
 import * as express from "express";
-import {IPost, Post, postsWithPaginationResponseStub} from "../../models/post";
+import {IPost, Post} from "../../models/post";
 import {CommentStub, commentsWithPaginationResponseStub} from "../../models/comment";
 import {SystemConfiguration} from "../../models/system-vars";
 import {AppError} from "../../models/app-error";
 import {IUserModel} from "../../models/user";
 import {asyncMiddleware} from "../../server";
+import {Pagination} from "../../models/pagination";
 
 const router = express.Router();
 
@@ -15,9 +16,16 @@ const router = express.Router();
  * @returns Promise<IPost>
  */
 async function getPostById(id: string) {
-    const post = await Post
-        .findOne({_id: id})
-        .populate("creator");
+    let post;
+
+    try {
+        post = await Post
+            .findOne({_id: id})
+            .populate("creator");
+    }
+    catch (e) {
+        throw AppError.ObjectDoesNotExist;
+    }
 
     if ( ! post ) {
         throw AppError.ObjectDoesNotExist;
@@ -43,9 +51,19 @@ async function getPostByIdOwnedByUser(id: string, user: IUserModel) {
     return post;
 }
 
+function hasUserViewedPost(user: IUserModel, post: IPost) {
+    return post.viewers.some((view: any) => {
+        return view._id.equals(user._id);
+    });
+}
+
 function addViewToPost(post: IPost, user: IUserModel) {
     if ( post.creator._id.equals(user._id) ) {
         return;
+    }
+
+    if ( ! hasUserViewedPost(user, post) ) {
+        post.uniqueViews++;
     }
 
     post.viewers.push(user._id);
@@ -111,6 +129,8 @@ router.post("/", asyncMiddleware(async (req: express.Request, res: express.Respo
 
     const post = new Post();
 
+    // TODO: Video file and thumbnail(s) uploading
+
     post.text = text;
     post.video = {
         url: "http://techslides.com/demos/sample-videos/small.mp4",
@@ -126,6 +146,65 @@ router.post("/", asyncMiddleware(async (req: express.Request, res: express.Respo
     await post.save();
 
     res.response({post: post});
+}));
+
+async function getPostsListByConditions(conditions: any, req: express.Request, res: express.Response) {
+    const page: number = req.query.page;
+    const total = await Post.count(conditions);
+    const pagination = new Pagination(page, total);
+
+    const posts = await Post
+        .find(conditions)
+        .sort("-createdAt")
+        .populate("creator");
+
+    console.log(posts);
+
+    res.response({
+        pagination: pagination,
+        posts: posts
+    });
+}
+
+/**
+ * @api {post} /post/bookmarked?page=1 Bookmarked posts
+ * @apiName Bookmarks
+ * @apiGroup Post
+ *
+ * @apiSuccess {Post[]}     posts Post objects
+ * @apiSuccess {String}         posts.id Post ID
+ * @apiSuccess {String}         posts.createdAt Post creation date
+ * @apiSuccess {User}           posts.creator Creator (user) object
+ * @apiSuccess {String}             posts.creator.username Username
+ * @apiSuccess {Profile}            posts.creator.profile User's profile metadata
+ * @apiSuccess {String}                 posts.creator.profile.firstName First name
+ * @apiSuccess {String}                 posts.creator.profile.lastName Last name
+ * @apiSuccess {Object}                 posts.creator.profile.picture User's profile picture
+ * @apiSuccess {String}                     posts.creator.profile.picture.url Url
+ * @apiSuccess {String}                     posts.creator.profile.picture.thumbnail Thumbnail url
+ * @apiSuccess {String}                 posts.creator.profile.bio Bio text
+ * @apiSuccess {int}                posts.creator.following Following counter
+ * @apiSuccess {int}                posts.creator.followers Followers counter
+ * @apiSuccess {boolean}            posts.creator.isFollowing Already following this user
+ * @apiSuccess {String}             posts.creator.createdAt Date registered
+ * @apiSuccess {Video}          posts.video Video object
+ * @apiSuccess {String}             posts.video.url Video file URL
+ * @apiSuccess {String[]}           posts.video.thumbnails Thumbnails URLs
+ * @apiSuccess {int}                posts.video.duration Video duration (seconds)
+ * @apiSuccess {int}            posts.views Post views
+ * @apiSuccess {int}            posts.uniqueViews Post unique views
+ * @apiSuccess {int}            posts.comments Post comments
+ * @apiSuccess {String}         posts.text Post text
+ *
+ * @apiSuccess {Pagination}     pagination Pagination object
+ * @apiSuccess {int}                pagination.page Current page
+ * @apiSuccess {int}                pagination.pages Total pages
+ * @apiSuccess {int}                pagination.results Total results
+ * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
+ * @apiSuccess {int}                pagination.offset Start offset
+ */
+router.get("/bookmarked", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    await getPostsListByConditions({"bookmarked._id": req.user._id}, req, res);
 }));
 
 router
@@ -165,9 +244,9 @@ router
         const postId: string = req.params.post;
         const post = await getPostById(postId);
 
-        addViewToPost(post, req.user);
-
         res.response({post: post});
+
+        addViewToPost(post, req.user);
     }))
 
     /**
@@ -333,47 +412,15 @@ router.post("/:post/comment", (req: express.Request, res: express.Response) => {
     res.response({comment: CommentStub});
 });
 
+function hasUserBookmarkedPost(user: IUserModel, post: any) {
+    if ( ! post.bookmarked || ! post.bookmarked.length ) {
+        return false;
+    }
 
-/**
- * @api {post} /post/bookmarked?page=1 Bookmarked posts
- * @apiName Bookmarks
- * @apiGroup Post
- *
- * @apiSuccess {Post[]}     posts Post objects
- * @apiSuccess {String}         posts.id Post ID
- * @apiSuccess {String}         posts.createdAt Post creation date
- * @apiSuccess {User}           posts.creator Creator (user) object
- * @apiSuccess {String}             posts.creator.username Username
- * @apiSuccess {Profile}            posts.creator.profile User's profile metadata
- * @apiSuccess {String}                 posts.creator.profile.firstName First name
- * @apiSuccess {String}                 posts.creator.profile.lastName Last name
- * @apiSuccess {Object}                 posts.creator.profile.picture User's profile picture
- * @apiSuccess {String}                     posts.creator.profile.picture.url Url
- * @apiSuccess {String}                     posts.creator.profile.picture.thumbnail Thumbnail url
- * @apiSuccess {String}                 posts.creator.profile.bio Bio text
- * @apiSuccess {int}                posts.creator.following Following counter
- * @apiSuccess {int}                posts.creator.followers Followers counter
- * @apiSuccess {boolean}            posts.creator.isFollowing Already following this user
- * @apiSuccess {String}             posts.creator.createdAt Date registered
- * @apiSuccess {Video}          posts.video Video object
- * @apiSuccess {String}             posts.video.url Video file URL
- * @apiSuccess {String[]}           posts.video.thumbnails Thumbnails URLs
- * @apiSuccess {int}                posts.video.duration Video duration (seconds)
- * @apiSuccess {int}            posts.views Post views
- * @apiSuccess {int}            posts.uniqueViews Post unique views
- * @apiSuccess {int}            posts.comments Post comments
- * @apiSuccess {String}         posts.text Post text
- *
- * @apiSuccess {Pagination}     pagination Pagination object
- * @apiSuccess {int}                pagination.page Current page
- * @apiSuccess {int}                pagination.pages Total pages
- * @apiSuccess {int}                pagination.results Total results
- * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
- * @apiSuccess {int}                pagination.offset Start offset
- */
-router.get("/bookmarked", (req: express.Request, res: express.Response) => {
-    res.response(postsWithPaginationResponseStub(req));
-});
+    return post.bookmarked.some((bookmark: any) => {
+        return bookmark._id.equals(user._id);
+    });
+}
 
 router
     .route("/:post/bookmark")
@@ -387,7 +434,9 @@ router
         const postId: string = req.params.post;
         const post = await getPostById(postId);
 
-        // TODO: Check if user already bookmarked this post
+        if ( hasUserBookmarkedPost(req.user, post) ) {
+            throw AppError.ObjectExist;
+        }
 
         post.bookmarked.push(req.user._id);
 
@@ -405,9 +454,24 @@ router
      * @apiName UnBookmarkPost
      * @apiGroup Post
      */
-    .delete((req: express.Request, res: express.Response) => {
+    .delete(asyncMiddleware(async (req: express.Request, res: express.Response) => {
+        const postId: string = req.params.post;
+        const post = await getPostById(postId);
+
+        if ( ! hasUserBookmarkedPost(req.user, post) ) {
+            throw AppError.ObjectDoesNotExist;
+        }
+
+        post.bookmarked.pull(req.user._id);
+
+        if ( post.isModified() ) {
+            post.save()
+                .then(() => {})
+                .catch(() => {});
+        }
+
         res.response();
-    });
+    }));
 
 
 /**

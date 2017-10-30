@@ -3,6 +3,7 @@ import {isAuthenticated} from "../../config/passport";
 import {default as PhoneAuthenticationRouter} from "./phone-auth";
 import {default as ManualAuthenticationRouter} from "./manual-auth";
 import {default as FacebookAuthenticationRouter} from "./facebook-auth";
+import {default as ForgotPasswordRouter} from "./forgot-password";
 
 
 const router = express.Router();
@@ -10,6 +11,7 @@ const router = express.Router();
 router.use("/phone", PhoneAuthenticationRouter);
 router.use("/manual", ManualAuthenticationRouter);
 router.use("/facebook", FacebookAuthenticationRouter);
+router.use("/forgot-password", ForgotPasswordRouter);
 
 /**
  * @api {delete} /auth Sign out

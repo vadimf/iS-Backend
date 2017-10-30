@@ -91,6 +91,8 @@ router
 
         await followUser(req.user, foundUser);
 
+        console.log("Finished");
+
         res.response();
     }))
 

@@ -147,7 +147,7 @@ router.post("/signin", asyncMiddleware(async (req: express.Request, res: express
         throw AppError.ObjectDoesNotExist;
     }
 
-    if ( ! userByEmail.password ) {
+    if ( ! userByEmail.password || ! userByEmail.password.hash ) {
         throw AppError.CannotAuthenticateViaThisMethod;
     }
 

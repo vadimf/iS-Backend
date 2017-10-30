@@ -8,15 +8,8 @@ export interface IPost extends mongoose.Document {
     video: IVideo;
     text?: string;
 
-    viewers: [{
-        type: IUserModel,
-        ref: "User"
-    }];
-
-    bookmarked: [{
-        type: IUserModel,
-        ref: "User"
-    }];
+    viewers: mongoose.Types.Array<IUserModel>;
+    bookmarked: mongoose.Types.Array<IUserModel>;
 
     views: number;
     uniqueViews: number;
@@ -80,7 +73,16 @@ export const PostSchema = new mongoose.Schema(
         viewers: [PostViewSchema],
         bookmarked: {
             type: [BookmarkerSchema],
+            ref: "User",
             index: true
+        },
+        uniqueViews: {
+            type: Number,
+            "default": 0
+        },
+        comments: {
+            type: Number,
+            "default": 0
         }
     },
     {
@@ -99,9 +101,9 @@ PostSchema.methods.toJSON = function() {
             thumbnails: this.video.thumbnails,
             duration: this.video.duration
         },
-        views: 1,
-        uniqueViews: 1,
-        comments: 1,
+        views: this.viewers ? this.viewers.length : 0,
+        uniqueViews: +this.uniqueViews,
+        comments: +this.comments,
         text: this.text
     };
 };

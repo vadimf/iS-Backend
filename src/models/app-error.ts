@@ -93,16 +93,3 @@ export class AppError {
      */
     static FacebookAuthenticationError = new AppError(StatusCode.Unauthorized, 3002, "There's been a problem authenticating with facebook");
 }
-
-export class ApiException extends Error {
-    private _error: AppError;
-
-    constructor(error: AppError) {
-        super(error.errorDescription);
-        this._error = error;
-    }
-
-    get error(): AppError {
-        return this._error;
-    }
-}

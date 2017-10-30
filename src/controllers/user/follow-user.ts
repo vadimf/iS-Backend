@@ -3,6 +3,38 @@ import {AppError} from "../../models/app-error";
 import {Follower} from "../../models/follow";
 
 /**
+ * Update followed user "followed" counter, and following user "following" counter
+ *
+ * @param {IUserModel} byUser
+ * @param {IUserModel} toUser
+ * @returns {Promise<void>}
+ */
+async function updateCounters(byUser: IUserModel, toUser: IUserModel) {
+    // update byUser's following counter
+    Follower
+        .count({follower: byUser._id})
+        .then((following: number) => {
+            byUser.following = following;
+            byUser.save()
+                .then(() => {})
+                .catch(() => {});
+        })
+        .catch(() => {});
+
+
+    // update toUsers's followers counter
+    Follower
+        .count({following: toUser._id})
+        .then((followers: number) => {
+            toUser.followers = followers;
+            toUser.save()
+                .then(() => {})
+                .catch(() => {});
+        })
+        .catch(() => {});
+}
+
+/**
  * Follow a user
  *
  * @param {IUserModel} byUser
@@ -26,7 +58,9 @@ export async function followUser(byUser: IUserModel, toUser: IUserModel) {
 
     follower
         .save()
-        .then(() => {})
+        .then(async () => {
+            await updateCounters(byUser, toUser);
+        })
         .catch((e) => {
             console.log("Follow user error", e);
         });
@@ -51,7 +85,9 @@ export async function unfollowUser(byUser: IUserModel, toUser: IUserModel) {
     }
 
     Follower.remove({following: toUser._id, follower: byUser._id})
-        .then(() => {})
+        .then(async () => {
+            await updateCounters(byUser, toUser);
+        })
         .catch((e) => {
             console.log("Unfollow user error", e);
         });

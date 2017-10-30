@@ -51,8 +51,9 @@ export const AuthTokenSchema = new mongoose.Schema(
     }
 );
 
-interface IPasswordModel extends mongoose.Document {
+export interface IPasswordModel extends mongoose.Document {
     hash: string;
+    resetToken?: string;
 
     compare: (candidatePassword: string) => Promise<any>;
     setPassword: (newPassword: string) => Promise<any>;
@@ -60,6 +61,9 @@ interface IPasswordModel extends mongoose.Document {
 
 const PasswordSchema = new mongoose.Schema({
     hash: {
+        type: String
+    },
+    resetToken: {
         type: String
     }
 });
