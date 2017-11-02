@@ -1,11 +1,14 @@
 import * as express from "express";
-import {IPost, Post} from "../../models/post";
-import {CommentStub, commentsWithPaginationResponseStub} from "../../models/comment";
+import {IPost, Post, PostReportReason} from "../../models/post";
 import {SystemConfiguration} from "../../models/system-vars";
 import {AppError} from "../../models/app-error";
-import {IUserModel} from "../../models/user";
+import {IUserModel, populateFollowing, User} from "../../models/user";
+import {Comment, ICommentModel} from "../../models/comment";
 import {asyncMiddleware} from "../../server";
 import {Pagination} from "../../models/pagination";
+import {countPostComments} from "../comment/comment";
+import * as _ from "underscore";
+import {CustomNotificationSender} from "../../utilities/custom-notification-sender";
 
 const router = express.Router();
 
@@ -129,7 +132,15 @@ router.post("/", asyncMiddleware(async (req: express.Request, res: express.Respo
 
     const post = new Post();
 
-    // TODO: Video file and thumbnail(s) uploading
+    /*
+     TODO: Video uploading
+
+     1. Upload video via multipart
+     2. Get video duration
+     3. Require video duration by system variables
+     4. Get the start and end point of 3 seconds from the middle of the video
+     5. Convert video to 3 seconds gif, save as thumbnail
+      */
 
     post.text = text;
     post.video = {
@@ -148,7 +159,7 @@ router.post("/", asyncMiddleware(async (req: express.Request, res: express.Respo
     res.response({post: post});
 }));
 
-async function getPostsListByConditions(conditions: any, req: express.Request, res: express.Response) {
+export async function getPostsListByConditions(conditions: any, req: express.Request, res: express.Response) {
     const page: number = req.query.page;
     const total = await Post.count(conditions);
     const pagination = new Pagination(page, total);
@@ -158,7 +169,7 @@ async function getPostsListByConditions(conditions: any, req: express.Request, r
         .sort("-createdAt")
         .populate("creator");
 
-    console.log(posts);
+    await populateFollowing(posts, req.user, "creator");
 
     res.response({
         pagination: pagination,
@@ -243,6 +254,8 @@ router
     .get(asyncMiddleware(async (req: express.Request, res: express.Response) => {
         const postId: string = req.params.post;
         const post = await getPostById(postId);
+
+        await populateFollowing(post, req.user, "creator");
 
         res.response({post: post});
 
@@ -363,9 +376,26 @@ router
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.get("/:post/comments", (req: express.Request, res: express.Response) => {
-    res.response(commentsWithPaginationResponseStub(req));
-});
+router.get("/:post/comments", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const postId: string = req.params.post;
+    const post = await getPostById(postId);
+    const page: number = req.query.page;
+    const total: number = await Comment.count({post: post._id});
+    const pagination = new Pagination(page, total);
+    const comments = await Comment
+        .find({post: post._id})
+        .sort("-createdAt")
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset)
+        .populate("creator");
+
+    await populateFollowing(comments, req.user, "creator");
+
+    res.response({
+        comments: comments,
+        pagination: pagination
+    });
+}));
 
 
 /**
@@ -408,10 +438,109 @@ router.post("/:post/view", asyncMiddleware(async (req: express.Request, res: exp
  * @apiSuccess {String}             comment.creator.createdAt Date registered
  * @apiSuccess {String}         comment.text Comment text
  */
-router.post("/:post/comment", (req: express.Request, res: express.Response) => {
-    res.response({comment: CommentStub});
-});
+router.post("/:post/comment", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const postId: string = req.params.post;
+    const post = await getPostById(postId);
 
+    req.checkBody({
+        "text": {
+            isLength: {
+                options: [{
+                    min: SystemConfiguration.validations.commentText.minLength,
+                    max: SystemConfiguration.validations.commentText.maxLength
+                }],
+                errorMessage: "Comment-text length is invalid"
+            }
+        }
+    });
+
+    if ( req.requestInvalid() ) {
+        return;
+    }
+
+    const text: string = req.body.text;
+
+    const comment = new Comment();
+    comment.post = post;
+    comment.creator = req.user;
+    comment.text = text;
+
+    res.response({comment: comment});
+
+    comment
+        .save()
+        .then(async() => {
+            post.comments = await countPostComments(post._id.toString());
+            await post.save();
+
+            const mentionedUsernames = getUsernameMentionsByText(text);
+
+            if ( mentionedUsernames.length ) {
+                const mentionedUsers = await User.find({username: {$in: mentionedUsernames}, _id: { $ne: post.creator._id}});
+
+                if ( mentionedUsers.length ) {
+                    await sendCommentMentionsNotification(mentionedUsers, req.user, comment);
+                }
+            }
+
+            await sendNewCommentNotification(post.creator, req.user, comment);
+        })
+        .catch(() => {});
+}));
+
+/**
+ * Send a notification about new comment in a post to the post's creator
+ *
+ * @param {IUserModel} toUser
+ * @param {IUserModel} byUser
+ * @param {ICommentModel} comment
+ * @returns {Promise<any>}
+ */
+async function sendNewCommentNotification(toUser: IUserModel, byUser: IUserModel, comment: ICommentModel) {
+    return await (new CustomNotificationSender(toUser))
+        .comment(byUser, comment)
+        .send();
+}
+
+/**
+ * Send a notification about comment mentions in a post to the mentioned users
+ *
+ * @param {IUserModel[]} toUsers
+ * @param {IUserModel} byUser
+ * @param {ICommentModel} comment
+ * @returns {Promise<any>}
+ */
+async function sendCommentMentionsNotification(toUsers: IUserModel[], byUser: IUserModel, comment: ICommentModel) {
+    return await (new CustomNotificationSender(toUsers))
+        .mention(byUser, comment)
+        .send();
+}
+
+/**
+ * @param {string} text
+ * @returns {any}
+ */
+function getUsernameMentionsByText(text: string) {
+    const mentionsRegex = new RegExp("@([a-zA-Z0-9\_\.]+)", "gim");
+
+    let matches = text.match(mentionsRegex);
+    if (matches && matches.length) {
+        matches = matches.map(function(match) {
+            return match.slice(1);
+        });
+        return _.uniq(matches);
+    } else {
+        return [];
+    }
+}
+
+/**
+ * Check whether the user has already bookmarked a post
+ *
+ * @param {IUserModel} user
+ * @param post
+ * @returns {boolean}
+ */
 function hasUserBookmarkedPost(user: IUserModel, post: any) {
     if ( ! post.bookmarked || ! post.bookmarked.length ) {
         return false;
@@ -478,11 +607,40 @@ router
  * @api {post} /post/:post/report Report a post
  * @apiName ReportPost
  * @apiGroup Post
+ *
+ * @apiParam {enum} reason Report reason enum (Spam = 1, Inappropriate = 2, DontLike = 3)
  */
-// TODO: Prepare report reason enum
-router.post("/:post/report", (req: express.Request, res: express.Response) => {
+router.post("/:post/report", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const postId: string = req.params.post;
+    const post = await getPostById(postId);
+
+    if ( post.creator._id.equals(req.user._id) ) {
+        throw AppError.ObjectDoesNotExist;
+    }
+
+    req.checkBody("reason", "Report reason must be numeric").isNumeric();
+
+    if ( req.requestInvalid() ) {
+        return;
+    }
+
+    const reason: PostReportReason = +req.body.reason;
+
+    if ( ! post.reports ) {
+        post.reports = [];
+    }
+
+    post.reports.push({
+        creator: req.user._id,
+        reason: reason
+    });
+
     res.response();
-});
+
+    post.save()
+        .then(() => {})
+        .catch(() => {});
+}));
 
 
 export default router;

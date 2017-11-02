@@ -10,8 +10,6 @@ import {Utilities} from "../../utilities/utilities";
 import {SystemConfiguration} from "../../models/system-vars";
 
 
-
-
 /**
  * Perform user authentication: Either create a user or return existing one, with a new authentication token.
  *

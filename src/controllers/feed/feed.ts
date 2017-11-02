@@ -1,5 +1,8 @@
 import * as express from "express";
-import {postsWithPaginationResponseStub} from "../../models/post";
+import {Post} from "../../models/post";
+import {asyncMiddleware} from "../../server";
+import {Pagination} from "../../models/pagination";
+import {populateFollowing} from "../../models/user";
 
 const router = express.Router();
 
@@ -40,10 +43,22 @@ const router = express.Router();
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.get("/", (req: express.Request, res: express.Response) => {
+router.get("/", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const page: number = req.query.page;
+    const total = await Post.count({});
+    const pagination = new Pagination(page, total);
+    const posts = await Post.find({})
+        .sort("-createdAt")
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset)
+        .populate("creator");
 
+    await populateFollowing(posts, req.user, "creator");
 
-    res.response(postsWithPaginationResponseStub(req));
-});
+    res.response({
+        posts: posts,
+        pagination: pagination
+    });
+}));
 
 export default router;

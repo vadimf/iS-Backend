@@ -2,6 +2,9 @@ import * as mongoose from "mongoose";
 import {IUserPicture, UserPictureSchema} from "./picture";
 import {IPhoneNumberModel, PhoneNumberSchema} from "./phone-number";
 import * as bcrypt from "bcrypt-nodejs";
+import {isBoolean} from "util";
+import {Follower, IFollowerModel} from "./follow";
+import * as _ from "underscore";
 
 export interface IUserProfileModel {
     firstName: string;
@@ -67,7 +70,7 @@ const PasswordSchema = new mongoose.Schema({
         type: String
     }
 });
-PasswordSchema.methods.compare = function(candidatePassword: string, cb: (err: any, isMatch: any) => {}) {
+PasswordSchema.methods.compare = function(candidatePassword: string) {
     const that = this;
     return new Promise(function (resolve, reject) {
         bcrypt.compare(candidatePassword, that.hash, (err: mongoose.Error, isMatch: boolean) => {
@@ -113,6 +116,31 @@ PasswordSchema.methods.setPassword = function(newPassword: string) {
     });
 };
 
+
+
+export const UserReportSchema = new mongoose.Schema(
+    {
+        reason: {
+            type: Number,
+            required: true
+        },
+        creator: {
+            type: mongoose.SchemaTypes.ObjectId,
+            required: true,
+            ref: "User",
+            index: true
+        }
+    },
+    {
+        timestamps: true
+    }
+);
+
+export interface IUserReport {
+    reason: UserReportReason;
+    creator: IUserModel|mongoose.Types.ObjectId;
+}
+
 export interface IUserModel extends mongoose.Document {
     username?: string;
     email?: string;
@@ -123,6 +151,8 @@ export interface IUserModel extends mongoose.Document {
     followers: number;
     following: number;
     password: IPasswordModel;
+    isFollowing: boolean;
+    reports: IUserReport[];
 
     toLoggedUser(): ILoggedUser;
     toForeignUser(): IForeignUser;
@@ -196,7 +226,8 @@ export const UserSchema = new mongoose.Schema(
             "default": {
                 hash: ""
             }
-        }
+        },
+        reports: [UserReportSchema]
     },
     {
         timestamps: true
@@ -219,7 +250,7 @@ UserSchema.methods.toForeignUser = function(): IForeignUser {
         profile: this.profile ? this.profile : null,
         followers: +this.followers,
         following: +this.following,
-        isFollowing: false,
+        isFollowing: ! isBoolean(this.isFollowing) ? false : this.isFollowing,
         createdAt: this.createdAt
     };
 };
@@ -255,5 +286,78 @@ export function foreignUsersArray(users: IUserModel[]): IForeignUser[] {
     return parsedUsers;
 }
 
+function getObjectPropertyFromString(obj: any, field: string): any {
+    if ( ! field ) {
+        return obj;
+    }
+    else if ( obj[field] ) {
+        return obj[field];
+    }
+
+    return null;
+}
+
+/**
+ * @param {Array<any>} objects
+ * @param {string} field
+ * @param {IUserModel} currentUser
+ * @returns {Promise<void>}
+ */
+export async function populateFollowing(objects: any, currentUser: IUserModel, field?: string) {
+    const userIds: string[] = [];
+
+    if ( objects.length ) {
+        for (const obj of objects) {
+            const userObject = getObjectPropertyFromString(obj, field);
+
+            if (userObject && userObject._id && !isBoolean(userObject.isFollowing)) {
+                userIds.push(userObject._id.toString());
+            }
+        }
+    }
+    else {
+        const userObject = getObjectPropertyFromString(objects, field);
+
+        if (userObject && userObject._id && !isBoolean(userObject.isFollowing)) {
+            userIds.push(userObject._id.toString());
+        }
+    }
+
+    let followingUsers: IFollowerModel[];
+
+    if ( userIds.length ) {
+        followingUsers = await Follower.find({follower: currentUser._id, following: {$in: _.uniq(userIds)}});
+    }
+
+    const followingUserIds: Map<string, boolean> = new Map([]);
+
+    if ( followingUsers && followingUsers.length ) {
+        for ( const follow of followingUsers ) {
+            const followingUserId = (<mongoose.Types.ObjectId>follow.following).toString();
+            followingUserIds.set(followingUserId, true);
+        }
+
+        if ( objects.length ) {
+            for (const obj of objects) {
+                const userObject = getObjectPropertyFromString(obj, field);
+
+                if (userObject && userObject._id && !( isBoolean(userObject.isFollowing) || userObject.isFollowing ) && followingUserIds.get(userObject._id.toString())) {
+                    userObject.isFollowing = true;
+                }
+            }
+        }
+        else {
+            const userObject = getObjectPropertyFromString(objects, field);
+
+            if (userObject && userObject._id && !( isBoolean(userObject.isFollowing) || userObject.isFollowing ) && followingUserIds.get(userObject._id.toString())) {
+                userObject.isFollowing = true;
+            }
+        }
+    }
+}
 
 export const User = mongoose.model<IUserModel>("User", UserSchema, "users");
+
+export enum UserReportReason {
+    Other = 1
+}

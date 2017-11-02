@@ -176,19 +176,11 @@ async function updateProfileImage(req: express.Request) {
         }
         else {
             if (req.user.profile.picture.path) {
-                fs.unlink(req.user.profile.picture.path, (err) => {
-                    if (err) {
-                        console.log("Error removing previous image", err);
-                    }
-                });
+                fs.unlink(req.user.profile.picture.path, () => {});
             }
 
             if (req.user.profile.picture.thumbnailPath) {
-                fs.unlink(req.user.profile.picture.thumbnailPath, (err) => {
-                    if (err) {
-                        console.log("Error removing previous thumbnail", err);
-                    }
-                });
+                fs.unlink(req.user.profile.picture.thumbnailPath, () => {});
             }
         }
 

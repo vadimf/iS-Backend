@@ -1,12 +1,3 @@
-export const SystemVarsStub = {
-    pages: {
-        "about": "http://www.globalbit.co.il/",
-        "privacy": "http://www.globalbit.co.il/",
-        "terms": "http://www.globalbit.co.il/",
-        "libraries": "http://www.globalbit.co.il/"
-    }
-};
-
 const StaticPages = {
     about               : "http://www.globalbit.co.il/",
     privacy             : "http://www.globalbit.co.il/",
@@ -47,6 +38,11 @@ const PasswordValidation = {
     maxLength           : 24
 };
 
+const CommentTextValidation = {
+    minLength           : 1,
+    maxLength           : 999
+};
+
 export class SystemConfiguration {
     static get pages() {
         return StaticPages;
@@ -63,7 +59,8 @@ export class SystemConfiguration {
             firstName: FirstNameValidation,
             lastName: LastNameValidation,
             bio: BioValidation,
-            postText: PostTextValidation
+            postText: PostTextValidation,
+            commentText: CommentTextValidation
         };
     }
 

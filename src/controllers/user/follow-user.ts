@@ -61,9 +61,7 @@ export async function followUser(byUser: IUserModel, toUser: IUserModel) {
         .then(async () => {
             await updateCounters(byUser, toUser);
         })
-        .catch((e) => {
-            console.log("Follow user error", e);
-        });
+        .catch(() => {});
 }
 
 /**
@@ -88,7 +86,5 @@ export async function unfollowUser(byUser: IUserModel, toUser: IUserModel) {
         .then(async () => {
             await updateCounters(byUser, toUser);
         })
-        .catch((e) => {
-            console.log("Unfollow user error", e);
-        });
+        .catch(() => {});
 }

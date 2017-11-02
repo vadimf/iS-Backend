@@ -1,9 +1,9 @@
 import * as mongoose from "mongoose";
-import {IForeignUser, IUserModel} from "./user";
+import {IForeignUser, IUserModel, populateFollowing} from "./user";
 
 export interface IFollowerModel extends mongoose.Document {
-    following: IUserModel;
-    follower: IUserModel;
+    following: IUserModel | mongoose.Types.ObjectId;
+    follower: IUserModel | mongoose.Types.ObjectId;
 }
 
 export const FollowerSchema = new mongoose.Schema(
@@ -24,41 +24,25 @@ export const FollowerSchema = new mongoose.Schema(
     }
 );
 
-export function followersToForeignUsersArray(followers: IFollowerModel[]): IForeignUser[] {
-    const users: IForeignUser[] = [];
-
-    for ( const follower of followers ) {
-        users.push(follower.follower.toForeignUser());
-    }
-
-    return users;
-}
-
-export function followingUsersToForeignUsersArray(followingUsers: IFollowerModel[]): IForeignUser[] {
-    const users: IForeignUser[] = [];
+export async function followersToForeignUsersArray(followingUsers: IFollowerModel[], currentUser: IUserModel, isFollowing = false): Promise<IForeignUser[]> {
+    const users: IUserModel[] = [];
 
     for ( const following of followingUsers ) {
-        users.push(following.following.toForeignUser());
+        users.push(<IUserModel>(isFollowing ? following.following : following.follower));
     }
 
-    return users;
+    await populateFollowing(users, currentUser);
+
+    const foreignUsersOutput: IForeignUser[] = [];
+
+    for ( const user of users ) {
+        foreignUsersOutput.push(user.toForeignUser());
+    }
+
+    return foreignUsersOutput;
 }
 
 export const Follower = mongoose.model<IFollowerModel>("Follow", FollowerSchema, "follows");
-
-/**
- * @param conditions
- * @returns "mongoose".DocumentQuery<IFollowerModel[], IFollowerModel>
- */
-export function getByConditions(conditions: any) {
-    // TODO: Check if following, change the boolean accordingly.
-    // TODO: Populate "followers" and "following" fields
-
-    return Follower
-        .find(conditions)
-        .populate("follower")
-        .populate("following");
-}
 
 /**
  *

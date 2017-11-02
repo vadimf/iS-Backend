@@ -1,6 +1,6 @@
 import * as express from "express";
 import {Pagination} from "../../models/pagination";
-import {foreignUsersArray, User} from "../../models/user";
+import {foreignUsersArray, populateFollowing, User} from "../../models/user";
 import {Post} from "../../models/post";
 import {Utilities} from "../../utilities/utilities";
 import {asyncMiddleware} from "../../server";
@@ -49,6 +49,8 @@ router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.R
         .limit(pagination.resultsPerPage)
         .skip(pagination.offset);
 
+    await populateFollowing(posts, req.user, "creator");
+
     res.response({
         users: posts,
         pagination: pagination
@@ -92,6 +94,8 @@ router.get("/users", asyncMiddleware(async (req: express.Request, res: express.R
         .find({username: searchRegex})
         .limit(pagination.resultsPerPage)
         .skip(pagination.offset);
+
+    await populateFollowing(users, req.user);
 
     res.response({
         users: foreignUsersArray(users),

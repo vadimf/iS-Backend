@@ -1,10 +1,11 @@
 import * as express from "express";
-import {User} from "../../models/user";
-import {postsWithPaginationResponseStub} from "../../models/post";
+import {populateFollowing, User, UserReportReason} from "../../models/user";
 import {AppError} from "../../models/app-error";
 import {followUser, unfollowUser} from "./follow-user";
 import {asyncMiddleware} from "../../server";
 import {getFollowsByConditions} from "./user";
+import {getPostsListByConditions} from "../post/post";
+import {CustomNotificationSender} from "../../utilities/custom-notification-sender";
 
 const router = express.Router({mergeParams: true});
 
@@ -19,7 +20,6 @@ async function getUserByUsername(username: string) {
     const user = await User.findOne({username: username});
 
     if ( ! user ) {
-        console.log("User not found", username);
         throw AppError.UserDoesNotExist;
     }
 
@@ -52,8 +52,7 @@ router.get("/", asyncMiddleware(async (req: express.Request, res: express.Respon
     const username: string = req.params.username;
     const foundUser = await getUserByUsername(username);
 
-    // TODO: Check if following, change the boolean accordingly.
-    // TODO: Populate "followers" and "following" fields
+    await populateFollowing(foundUser, req.user);
 
     res.response({
         user: foundUser.toForeignUser()
@@ -66,12 +65,39 @@ router.get("/", asyncMiddleware(async (req: express.Request, res: express.Respon
  * @apiName ReportUser
  * @apiGroup User
  *
- * @apiParam {String} vars Not ready yet...
+ * @apiParam {enum} reason User report reason enum (other = 1)
  */
-// TODO: Prepare report reason enum
-router.post("/report", (req: express.Request, res: express.Response, next: express.NextFunction) => {
+router.post("/report", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const username: string = req.params.username;
+    const user = await getUserByUsername(username);
+
+    if ( user._id.equals(req.user._id) ) {
+        throw AppError.ObjectDoesNotExist;
+    }
+
+    req.checkBody("reason", "Report reason must be numeric").isNumeric();
+
+    if ( req.requestInvalid() ) {
+        return;
+    }
+
+    const reason: UserReportReason = +req.body.reason;
+
+    if ( ! user.reports ) {
+        user.reports = [];
+    }
+
+    user.reports.push({
+        creator: req.user._id,
+        reason: reason
+    });
+
     res.response();
-});
+
+    user.save()
+        .then(() => {})
+        .catch(() => {});
+}));
 
 
 router
@@ -91,7 +117,11 @@ router
 
         await followUser(req.user, foundUser);
 
-        console.log("Finished");
+        (new CustomNotificationSender(foundUser))
+            .follow(req.user)
+            .send()
+            .then(() => {})
+            .catch(() => {});
 
         res.response();
     }))
@@ -225,8 +255,14 @@ router.get("/followers", asyncMiddleware(async (req: express.Request, res: expre
  *
  * @apiUse UserDoesNotExist
  */
-router.get("/posts", (req: express.Request, res: express.Response) => {
-    res.response(postsWithPaginationResponseStub(req));
-});
+router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.Response) => {    const username: string = req.params.username;
+    const user = await User.findOne({username: username});
+
+    if ( ! user ) {
+        throw AppError.ObjectDoesNotExist;
+    }
+
+    await getPostsListByConditions({creator: user._id}, req, res);
+}));
 
 export default router;

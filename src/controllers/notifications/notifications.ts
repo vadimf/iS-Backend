@@ -12,12 +12,12 @@ const router = express.Router();
 router.patch("/", (req: express.Request, res: express.Response) => {
     req.authToken.firebaseToken = req.body.token;
 
+    res.response();
+
     req.user
         .save()
         .then(() => {})
         .catch(() => {});
-
-    res.response();
 });
 
 export default router;

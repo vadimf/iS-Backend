@@ -1,10 +1,11 @@
 import * as express from "express";
 import {Pagination} from "../../models/pagination";
-import {postsWithPaginationResponseStub} from "../../models/post";
 import {updateUserDetails} from "./update-user";
-import {countByConditions, followersToForeignUsersArray, followingUsersToForeignUsersArray, getByConditions} from "../../models/follow";
+import {countByConditions, Follower, followersToForeignUsersArray} from "../../models/follow";
 import {default as ForeignUserRouter} from "./foreign-user-router";
 import {asyncMiddleware} from "../../server";
+import {getPostsListByConditions} from "../post/post";
+import {IForeignUser} from "../../models/user";
 
 const router = express.Router();
 
@@ -88,8 +89,6 @@ router
             return;
         }
 
-        // TODO: Populate "followers" and "following" fields
-
         if ( req.user.isModified() ) {
             req.user.save();
         }
@@ -97,17 +96,33 @@ router
         res.response({user: req.user.toLoggedUser()});
     }));
 
+/**
+ * Get follows by conditions
+ *
+ * @param conditions any
+ * @param {boolean} followers
+ * @param {e.Request} req
+ * @param {e.Response} res
+ * @returns {Promise<void>}
+ */
 export async function getFollowsByConditions(conditions: any, followers = false, req: express.Request, res: express.Response) {
     const page: number = +req.query.page;
     const totalFollows = await countByConditions(conditions);
     const pagination = new Pagination(page, totalFollows);
 
-    const follows = await getByConditions(conditions)
+    const follows = await Follower
+        .find(conditions)
+        .populate("follower")
+        .populate("following")
         .limit(pagination.resultsPerPage)
         .skip(pagination.offset);
 
+    let responseUsers: IForeignUser[];
+
+    responseUsers = await followersToForeignUsersArray(follows, req.user, ! followers);
+
     res.response({
-        users: followers ? followersToForeignUsersArray(follows) : followingUsersToForeignUsersArray(follows),
+        users: responseUsers,
         pagination: pagination
     });
 }
@@ -211,9 +226,9 @@ router.get("/followers", asyncMiddleware(async (req: express.Request, res: expre
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.get("/posts", (req: express.Request, res: express.Response) => {
-    res.response(postsWithPaginationResponseStub(req));
-});
+router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    await getPostsListByConditions({creator: req.user._id}, req, res);
+}));
 
 
 router.use("/:username", ForeignUserRouter);

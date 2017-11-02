@@ -29,6 +29,8 @@ const router = express.Router();
  * @apiSuccess {String}         users.createdAt Date registered
  */
 router.post("/contacts", (req: express.Request, res: express.Response) => {
+    // TODO: populate isFollowing
+
     res.response({
         users: [ForeignUserStub, ForeignUserStub, ForeignUserStub]
     });
@@ -62,6 +64,8 @@ router.post("/contacts", (req: express.Request, res: express.Response) => {
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/suggestions", (req: express.Request, res: express.Response) => {
+    // TODO: populate isFollowing
+
     const pagination = new Pagination(1, 3, 50);
 
     res.response({

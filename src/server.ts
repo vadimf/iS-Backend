@@ -180,9 +180,7 @@ app.use("/v1/search",               isAuthenticated,      SearchRouter);
 app.use("/v1/post",                 isAuthenticated,        PostRouter);
 app.use("/v1/comment",              isAuthenticated,        CommentRouter);
 app.use("/v1/discover",             isAuthenticated,        DiscoverRouter);
-app.post("/v1/search/posts", async (req: express.Request, res: express.Response, next: express.NextFunction) => { // TESTING
-    throw AppError.UserDoesNotExist;
-});
+
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if ( err ) {
