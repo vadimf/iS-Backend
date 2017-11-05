@@ -198,11 +198,7 @@ export const UserSchema = new mongoose.Schema(
             index: true
         },
         tokens: {
-            type: [AuthTokenSchema],
-            required: true,
-            unique: true,
-            index: true,
-            sparse: true
+            type: [AuthTokenSchema]
         },
         profile: {
             type: ProfileSchema

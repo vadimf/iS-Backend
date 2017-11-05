@@ -1,0 +1,1 @@
+// export function getDuration(path: String): Promise<number>;

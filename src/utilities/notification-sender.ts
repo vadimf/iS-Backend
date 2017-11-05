@@ -1,6 +1,5 @@
 import * as admin from "firebase-admin";
 import {NotificationLog} from "../models/notification-logs";
-// import serviceAccountData from "./firebase-service-account-key.json";
 
 export class NotificationSender {
     private static _initialized = false;

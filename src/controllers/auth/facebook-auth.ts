@@ -123,11 +123,8 @@ async function createUserByFacebookUser(facebookUser: IFacebookUser): Promise<IU
 
             user.profile.picture = <IUserPicture>{};
 
-            user.profile.picture.url = uploadedProfilePictureData.picture.url;
-            user.profile.picture.path = uploadedProfilePictureData.picture.path;
-
-            user.profile.picture.thumbnail = uploadedProfilePictureData.thumbnail.url;
-            user.profile.picture.thumbnailPath = uploadedProfilePictureData.thumbnail.path;
+            user.profile.picture.url = uploadedProfilePictureData.picture;
+            user.profile.picture.thumbnail = uploadedProfilePictureData.thumbnail;
         }
         catch (e) {
             throw AppError.UploadingError;

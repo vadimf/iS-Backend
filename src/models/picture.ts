@@ -2,24 +2,18 @@ import * as mongoose from "mongoose";
 
 export interface IUserPicture {
     url: string;
-    path: string;
     thumbnail: string;
-    thumbnailPath: string;
 }
 
 export const UserPictureSchema = new mongoose.Schema(
     {
         url: String,
-        path: String,
-        thumbnail: String,
-        thumbnailPath: String
+        thumbnail: String
     },
     {
         toJSON: {
             transform: function (doc: any, ret: any) {
                 delete ret._id;
-                delete ret.path;
-                delete ret.thumbnailPath;
             }
         }
     }

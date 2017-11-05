@@ -2,6 +2,7 @@ import fs = require("fs");
 import {Utilities} from "../../utilities/utilities";
 import sharp = require("sharp");
 import * as request from "request";
+import {StorageManager, MimeType} from "../../utilities/storage-manager";
 
 export class UploadProfilePicture {
     private _buffer: Buffer;
@@ -34,26 +35,6 @@ export class UploadProfilePicture {
         });
     }
 
-    private _createDirectoryIfDoesNotExists(directory: string) {
-        return new Promise(((resolve, reject) => {
-            fs.exists(directory, (exists => {
-                if ( exists ) {
-                    resolve();
-                }
-                else {
-                    fs.mkdir(directory, (err) => {
-                        if ( err ) {
-                            reject(err);
-                        }
-                        else {
-                            resolve();
-                        }
-                    });
-                }
-            }));
-        }));
-    }
-
     async uploadUserProfilePicture() {
         if ( ! this._buffer && this._url ) {
             await this._urlToBuffer();
@@ -63,40 +44,32 @@ export class UploadProfilePicture {
             throw new Error("No buffer to upload image");
         }
 
-        const uploadsPath = process.env.UPLOADS_PATH + "/" + this._userId;
-        const uploadsUrl = process.env.UPLOADS_URL + "/" + this._userId;
-
-        await this._createDirectoryIfDoesNotExists(process.env.UPLOADS_PATH);
-        await this._createDirectoryIfDoesNotExists(uploadsPath);
-
-        const fileName = Utilities.randomString(32);
+        const storageManager = new StorageManager();
+        const fileName = this._userId + "/" + Utilities.randomString(24);
         const thumbnailFileName = fileName + ".thumb";
-        const fileExtension = ".png";
 
-        const filePath = uploadsPath + "/" + fileName + fileExtension;
-        const thumbnailFilePath = uploadsPath + "/" + thumbnailFileName + fileExtension;
-
-        const fileUrl = uploadsUrl + "/" + fileName + fileExtension;
-        const thumbnailFileUrl = uploadsUrl + "/" + thumbnailFileName + fileExtension;
-
-        const thumbnailCreationPromise = sharp(this._buffer)
+        const thumbnailCreationBuffer = await sharp(this._buffer)
             .resize(200, 200)
-            .toFile(thumbnailFilePath);
+            .toBuffer();
 
-        const imageSavingPromise = sharp(this._buffer)
-            .toFile(filePath);
+        const allowedMimeTypes = [
+            MimeType.IMAGE_JPEG,
+            MimeType.IMAGE_PNG
+        ];
 
-        await Promise.all([thumbnailCreationPromise, imageSavingPromise]);
+        const profileImageUploadingPromise = storageManager
+            .fileName(fileName)
+            .fromBuffer(this._buffer, allowedMimeTypes);
+
+        const thumbnailUploadingPromise = storageManager
+            .fileName(thumbnailFileName)
+            .fromBuffer(thumbnailCreationBuffer, allowedMimeTypes);
+
+        const promisesResponse = await Promise.all([profileImageUploadingPromise, thumbnailUploadingPromise]);
 
         return {
-            picture: {
-                url: fileUrl,
-                path: filePath,
-            },
-            thumbnail: {
-                url: thumbnailFileUrl,
-                path: thumbnailFilePath
-            }
+            picture: promisesResponse[0].url,
+            thumbnail: promisesResponse[1].url
         };
     }
 }

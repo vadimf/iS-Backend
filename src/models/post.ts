@@ -17,14 +17,14 @@ export interface IPost extends mongoose.Document {
 
 export interface IVideo {
     url: string;
-    thumbnails: string[];
+    thumbnail: string;
     duration: number;
 }
 
 export const VideoSchema = new mongoose.Schema(
     {
         url: String,
-        thumbnails: [String],
+        thumbnail: String,
         duration: Number
     }
 );
@@ -95,8 +95,7 @@ export const PostSchema = new mongoose.Schema(
         viewers: [PostViewSchema],
         bookmarked: {
             type: [BookmarkerSchema],
-            ref: "User",
-            index: true
+            ref: "User"
         },
         uniqueViews: {
             type: Number,
@@ -121,7 +120,7 @@ PostSchema.methods.toJSON = function() {
         creator: this.creator ? this.creator.toForeignUser() : null,
         video: {
             url: this.video.url,
-            thumbnails: this.video.thumbnails,
+            thumbnail: this.video.thumbnail,
             duration: this.video.duration
         },
         views: this.viewers ? this.viewers.length : 0,

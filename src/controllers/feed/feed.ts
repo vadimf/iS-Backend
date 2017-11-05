@@ -29,7 +29,7 @@ const router = express.Router();
  * @apiSuccess {String}             posts.creator.createdAt Date registered
  * @apiSuccess {Video}          posts.video Video object
  * @apiSuccess {String}             posts.video.url Video file URL
- * @apiSuccess {String[]}           posts.video.thumbnails Thumbnails URLs
+ * @apiSuccess {String}             posts.video.thumbnail Thumbnail URL
  * @apiSuccess {int}                posts.video.duration Video duration (seconds)
  * @apiSuccess {int}            posts.views Post views
  * @apiSuccess {int}            posts.uniqueViews Post unique views

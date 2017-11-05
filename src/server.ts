@@ -6,7 +6,7 @@ import * as compression from "compression";  // compresses requests
 import * as session from "express-session";
 import * as bodyParser from "body-parser";
 import * as logger from "morgan";
-import * as errorHandler from "errorhandler";
+// import * as errorHandler from "errorhandler";
 import * as lusca from "lusca";
 import * as dotenv from "dotenv";
 import * as mongo from "connect-mongo";
@@ -15,7 +15,6 @@ import * as path from "path";
 import * as mongoose from "mongoose";
 import * as passport from "passport";
 import expressValidator = require("express-validator");
-
 
 const MongoStore = mongo(session);
 
@@ -59,6 +58,13 @@ app.use(bodyParser.json({limit: "50mb"}));
 app.use(bodyParser.urlencoded({
     extended: false
 }));
+app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if ( req.method === "POST" && req.body._method ) {
+        req.method = req.body._method;
+    }
+
+    next();
+});
 app.use(expressValidator());
 app.use(session({
   resave: true,
@@ -70,7 +76,7 @@ app.use(session({
   })
 }));
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session());
 app.use(flash());
 app.use(lusca.xframe("SAMEORIGIN"));
 app.use(lusca.xssProtection(true));
@@ -170,6 +176,11 @@ import {isNullOrUndefined} from "util";
  */
 app.use("/v1/auth", AuthRouter);
 app.use("/v1/system", SystemRouter);
+app.use("/v1/system2", (req: express.Request, res: express.Response) => {
+    res.render("account/forgot", {
+        title: "Forgot Password"
+    });
+});
 
 // Protected requests
 // TODO: Add authentication middleware to all of the routes below
@@ -184,7 +195,27 @@ app.use("/v1/discover",             isAuthenticated,        DiscoverRouter);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     if ( err ) {
-        res.error(err);
+        const contentType = req.headers["content-type"];
+        const jsonResponse = contentType === "application/json";
+
+        if ( jsonResponse ) {
+            res.error(err);
+        }
+        else {
+            let message: string;
+
+            if ( err instanceof AppError ) {
+                message = err.errorDescription;
+            }
+            else {
+                message = err.message;
+            }
+
+            res.render("fatal", {
+                title: "Error",
+                message: message
+            });
+        }
     }
 
     // next(err);
@@ -195,7 +226,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 /**
  * Error Handler. Provides full stack - remove for production
  */
-app.use(errorHandler());
+// app.use(errorHandler());
 
 /**
  * Start Express server.

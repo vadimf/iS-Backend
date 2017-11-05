@@ -9,7 +9,19 @@ import {Pagination} from "../../models/pagination";
 import {countPostComments} from "../comment/comment";
 import * as _ from "underscore";
 import {CustomNotificationSender} from "../../utilities/custom-notification-sender";
+import * as multer from "multer";
+import {MimeType, StorageManager} from "../../utilities/storage-manager";
+import {Utilities} from "../../utilities/utilities";
+const getDuration = require("get-video-duration");
+const gifify = require("gifify");
 
+const storage = multer.memoryStorage();
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 52428800
+    }
+});
 const router = express.Router();
 
 /**
@@ -78,6 +90,31 @@ function addViewToPost(post: IPost, user: IUserModel) {
     }
 }
 
+async function getVideoDurationByUrl(url: string): Promise<number> {
+    return Math.ceil(await getDuration(url));
+}
+
+async function convertVideoToGif(videoUrl: string, gifFileName: string, videoDuration: number, gifDuration: number): Promise<string> {
+    const gifStartPoint = Math.floor(videoDuration / 2 - gifDuration / 2);
+
+    const gififyOptions = {
+        resize: "400:400",
+        from: gifStartPoint,
+        to: gifStartPoint + gifDuration
+    };
+
+    const gififyStream = gifify(videoUrl, gififyOptions);
+
+    const gifStorageResults = await (new StorageManager())
+        .fileName(gifFileName)
+        .fromStream(gififyStream, {
+            mime: MimeType.IMAGE_GIF,
+            ext: "gif"
+        });
+
+    return gifStorageResults.url;
+}
+
 /**
  * @api {post} /post Create a post
  * @apiName CreatePost
@@ -104,14 +141,14 @@ function addViewToPost(post: IPost, user: IUserModel) {
  * @apiSuccess {String}             post.creator.createdAt Date registered
  * @apiSuccess {Video}          post.video Video object
  * @apiSuccess {String}             post.video.url Video file URL
- * @apiSuccess {String[]}           post.video.thumbnails Thumbnails URLs
+ * @apiSuccess {String}             post.video.thumbnail Thumbnail URLs
  * @apiSuccess {int}                post.video.duration Video duration (seconds)
  * @apiSuccess {int}            post.views Post views
  * @apiSuccess {int}            post.uniqueViews Post unique views
  * @apiSuccess {int}            post.comments Post comments
  * @apiSuccess {String}         post.text Post text
  */
-router.post("/", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+router.post("/", upload.single("video"), asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const text: string = req.body.text;
 
     req.checkBody({
@@ -130,28 +167,39 @@ router.post("/", asyncMiddleware(async (req: express.Request, res: express.Respo
         return;
     }
 
+    if ( ! req.file ) {
+        res.error(AppError.UploadingError, "No file given");
+        return;
+    }
+
     const post = new Post();
-
-    /*
-     TODO: Video uploading
-
-     1. Upload video via multipart
-     2. Get video duration
-     3. Require video duration by system variables
-     4. Get the start and end point of 3 seconds from the middle of the video
-     5. Convert video to 3 seconds gif, save as thumbnail
-      */
-
     post.text = text;
-    post.video = {
-        url: "http://techslides.com/demos/sample-videos/small.mp4",
-        thumbnails: [
-            "http://images.media-allrecipes.com/userphotos/960x960/3757723.jpg",
-            "https://www.thesun.co.uk/wp-content/uploads/2016/09/nintchdbpict000264481984.jpg?w=960",
-            "https://mcdonalds.com.au/sites/mcdonalds.com.au/files/hero_pdt_hamburger.png"
-        ],
-        duration: 5
-    };
+
+    req.setTimeout(0, null);
+
+    const fileStorageManager = new StorageManager();
+    const fileUploadingPromise = fileStorageManager
+        .fileName(req.user._id.toString() + "/" + Utilities.randomString(24))
+        .fromBuffer(req.file.buffer, [MimeType.VIDEO_MP4]);
+
+    const fileUploadingResults = await fileUploadingPromise;
+
+    if ( fileUploadingResults ) {
+        const duration = await getVideoDurationByUrl(fileUploadingResults.url);
+        const gifThumbnailUrl = await convertVideoToGif(
+            fileUploadingResults.url,
+            req.user._id.toString() + "/" + Utilities.randomString(24),
+            duration,
+            3
+        );
+
+        post.video = {
+            url: fileUploadingResults.url,
+            thumbnail: gifThumbnailUrl,
+            duration: duration
+        };
+    }
+
     post.creator = req.user;
 
     await post.save();
@@ -200,7 +248,7 @@ export async function getPostsListByConditions(conditions: any, req: express.Req
  * @apiSuccess {String}             posts.creator.createdAt Date registered
  * @apiSuccess {Video}          posts.video Video object
  * @apiSuccess {String}             posts.video.url Video file URL
- * @apiSuccess {String[]}           posts.video.thumbnails Thumbnails URLs
+ * @apiSuccess {String}             posts.video.thumbnail Thumbnail URL
  * @apiSuccess {int}                posts.video.duration Video duration (seconds)
  * @apiSuccess {int}            posts.views Post views
  * @apiSuccess {int}            posts.uniqueViews Post unique views
@@ -244,7 +292,7 @@ router
      * @apiSuccess {String}             post.creator.createdAt Date registered
      * @apiSuccess {Video}          post.video Video object
      * @apiSuccess {String}             post.video.url Video file URL
-     * @apiSuccess {String[]}           post.video.thumbnails Thumbnails URLs
+     * @apiSuccess {String}             post.video.thumbnail Thumbnail URL
      * @apiSuccess {int}                post.video.duration Video duration (seconds)
      * @apiSuccess {int}            post.views Post views
      * @apiSuccess {int}            post.uniqueViews Post unique views
@@ -287,7 +335,7 @@ router
      * @apiSuccess {String}             post.creator.createdAt Date registered
      * @apiSuccess {Video}          post.video Video object
      * @apiSuccess {String}             post.video.url Video file URL
-     * @apiSuccess {String[]}           post.video.thumbnails Thumbnails URLs
+     * @apiSuccess {String}             post.video.thumbnail Thumbnail URL
      * @apiSuccess {int}                post.video.duration Video duration (seconds)
      * @apiSuccess {int}            post.views Post views
      * @apiSuccess {int}            post.uniqueViews Post unique views
@@ -336,13 +384,16 @@ router
         const postId: string = req.params.post;
         const post = await getPostByIdOwnedByUser(postId, req.user);
 
-        // TODO: Remove post video file & thumbnails
+        res.response();
 
-        post.remove()
+        const removeVideoFilePromise = StorageManager.removeFile(post.video.url);
+        const removeVideoThumbnailPromise = StorageManager.removeFile(post.video.thumbnail);
+
+        Promise.all([removeVideoFilePromise, removeVideoThumbnailPromise])
             .then(() => {})
             .catch(() => {});
 
-        res.response();
+        post.remove();
     }));
 
 
@@ -474,9 +525,11 @@ router.post("/:post/comment", asyncMiddleware(async (req: express.Request, res: 
             await post.save();
 
             const mentionedUsernames = getUsernameMentionsByText(text);
+            console.log(mentionedUsernames);
 
             if ( mentionedUsernames.length ) {
                 const mentionedUsers = await User.find({username: {$in: mentionedUsernames}, _id: { $ne: post.creator._id}});
+                console.log(mentionedUsers);
 
                 if ( mentionedUsers.length ) {
                     await sendCommentMentionsNotification(mentionedUsers, req.user, comment);

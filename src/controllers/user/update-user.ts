@@ -4,8 +4,8 @@ import {Utilities} from "../../utilities/utilities";
 import {SystemConfiguration} from "../../models/system-vars";
 import {User} from "../../models/user";
 import {AppError} from "../../models/app-error";
-import fs = require("fs");
 import {UploadProfilePicture} from "./upload-profile-picture";
+import {StorageManager} from "../../utilities/storage-manager";
 
 /**
  * Update all user details: Profile image, first name, last name, bio
@@ -156,40 +156,48 @@ async function updateProfileImage(req: express.Request) {
         }
     });
 
-    if ( ! req.requestInvalid() ) {
-        const imageBase64 = req.body.user.profile.picture;
-
-        const uploadProfilePicture = new UploadProfilePicture(req.user._id.toString());
-
-        let uploadedProfilePictureData: any;
-        try {
-            uploadedProfilePictureData = await uploadProfilePicture
-                .base64(imageBase64)
-                .uploadUserProfilePicture();
-        }
-        catch (e) {
-            throw AppError.UploadingError;
-        }
-
-        if (!req.user.profile.picture) {
-            req.user.profile.picture = {};
-        }
-        else {
-            if (req.user.profile.picture.path) {
-                fs.unlink(req.user.profile.picture.path, () => {});
-            }
-
-            if (req.user.profile.picture.thumbnailPath) {
-                fs.unlink(req.user.profile.picture.thumbnailPath, () => {});
-            }
-        }
-
-        req.user.profile.picture.thumbnail = uploadedProfilePictureData.thumbnail.url;
-        req.user.profile.picture.thumbnailPath = uploadedProfilePictureData.thumbnail.path;
-
-        req.user.profile.picture.url = uploadedProfilePictureData.picture.url;
-        req.user.profile.picture.path = uploadedProfilePictureData.picture.path;
+    if ( req.validationErrors() ) {
+        return;
     }
+
+    const imageBase64 = req.body.user.profile.picture;
+
+    const uploadProfilePicture = new UploadProfilePicture(req.user._id.toString());
+
+    let uploadedProfilePictureData: any;
+
+    try {
+        uploadedProfilePictureData = await uploadProfilePicture
+            .base64(imageBase64)
+            .uploadUserProfilePicture();
+    }
+    catch (e) {
+        throw AppError.UploadingError;
+    }
+
+    if (!req.user.profile.picture) {
+        req.user.profile.picture = {};
+    }
+    else {
+        if (req.user.profile.picture.url) {
+            StorageManager
+                .removeFile(req.user.profile.picture.url)
+                .then(() => {})
+                .catch(() => {});
+        }
+
+        if (req.user.profile.picture.thumbnail) {
+            StorageManager
+                .removeFile(req.user.profile.picture.thumbnail)
+                .then(() => {})
+                .catch(() => {});
+        }
+    }
+
+    req.user.profile.picture = {
+        thumbnail: uploadedProfilePictureData.thumbnail,
+        url: uploadedProfilePictureData.picture
+    };
 }
 
 /**

@@ -1,9 +1,11 @@
 import * as express from "express";
 import {asyncMiddleware} from "../../server";
-import {IPasswordModel, User} from "../../models/user";
+import {IPasswordModel, IUserModel, User} from "../../models/user";
 import {AppError} from "../../models/app-error";
 import {Utilities} from "../../utilities/utilities";
 import {SystemConfiguration} from "../../models/system-vars";
+import * as nodemailer from "nodemailer";
+import * as pug from "pug";
 
 const router = express.Router();
 
@@ -59,12 +61,27 @@ router
             return;
         }
 
+        const contentType = req.headers["content-type"];
+        const jsonResponse = contentType === "application/json";
         const token: string = req.query.token;
-        const user = await getUserByToken(token);
 
-        res.response({
-            user: user.toLoggedUser()
-        });
+        let user: IUserModel;
+        user = await getUserByToken(token);
+
+        if ( jsonResponse ) {
+            res.response({
+                user: user.toLoggedUser()
+            });
+        }
+        else {
+            res.render("account/forgot", {
+                brand: process.env.APP_NAME,
+                title: "Reset Password",
+                user: user,
+                validations: SystemConfiguration.validations,
+                token: token
+            });
+        }
     }))
 
     /**
@@ -106,7 +123,56 @@ router
         await user.save();
 
         res.response();
+
+        sendPasswordRestorationEmail(user)
+            .then(() => {})
+            .catch((err) => {
+                console.log("Email error", err);
+            });
     }));
+
+/**
+ * @param {IUserModel} user
+ * @returns {Promise<SentMessageInfo>}
+ */
+function sendPasswordRestorationEmail(user: IUserModel) {
+    const path = __dirname + "/../../../views/emails/password-restoration.pug";
+    const renderedView = pug.renderFile(path, {
+        brand: process.env.APP_NAME,
+        user: user,
+        link: process.env.API_URL + "auth/forgot-password/?token=" + user.password.resetToken
+    });
+
+    const transporterOptions = {
+        host: process.env.EMAIL_HOST,
+        port: +process.env.EMAIL_PORT,
+        secure: process.env.EMAIL_SECURE === "true",
+        auth: {
+            user: process.env.EMAIL_AUTH_USER,
+            pass: process.env.EMAIL_AUTH_PASSWORD
+        }
+    };
+
+    const transporter = nodemailer.createTransport(transporterOptions);
+
+    const mailOptions = {
+        from: process.env.APP_NAME + " <" + process.env.EMAIL_FROM + ">",
+        to: user.email,
+        subject: "(" + process.env.APP_NAME + ") Password recovery",
+        html: renderedView
+    };
+
+    return new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, (error?: Error, info?: nodemailer.SentMessageInfo) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+
+            resolve(info);
+        });
+    });
+}
 
 /**
  * @api {get} /auth/forgot-password?token=FORGOT_PASSWORD_TOKEN Get user by forgotten password token
@@ -119,6 +185,9 @@ router
  * @apiUse ErrorPerformingAction
  */
 router.patch("/reset", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const contentType = req.headers["content-type"];
+    const jsonResponse = contentType === "application/json";
+
     req.checkQuery({
         "token": {
             notEmpty: {
@@ -153,7 +222,15 @@ router.patch("/reset", asyncMiddleware(async (req: express.Request, res: express
 
     await user.save();
 
-    res.response();
+    if ( jsonResponse ) {
+        res.response();
+    }
+    else {
+        res.render("success", {
+            title: "Reset Password",
+            message: "Your password has been changed"
+        });
+    }
 }));
 
 
