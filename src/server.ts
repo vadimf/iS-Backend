@@ -211,6 +211,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
             }
 
             res.render("fatal", {
+                brand: process.env.APP_NAME,
                 title: "Error",
                 message: message
             });

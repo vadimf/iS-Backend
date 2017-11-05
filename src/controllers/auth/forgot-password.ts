@@ -227,6 +227,7 @@ router.patch("/reset", asyncMiddleware(async (req: express.Request, res: express
     }
     else {
         res.render("success", {
+            brand: process.env.APP_NAME,
             title: "Reset Password",
             message: "Your password has been changed"
         });
