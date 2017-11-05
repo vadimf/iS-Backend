@@ -183,7 +183,6 @@ app.use("/v1/system2", (req: express.Request, res: express.Response) => {
 });
 
 // Protected requests
-// TODO: Add authentication middleware to all of the routes below
 app.use("/v1/user",                 isAuthenticated,        UserRouter);
 app.use("/v1/notifications",        isAuthenticated,        NotificationsRouter);
 app.use("/v1/feed",                 isAuthenticated,        FeedRouter);
