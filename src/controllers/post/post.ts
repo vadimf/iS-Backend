@@ -103,6 +103,8 @@ async function convertVideoToGif(videoUrl: string, gifFileName: string, videoDur
         to: gifStartPoint + gifDuration
     };
 
+    console.log("Starting convertion to gif with options", gififyOptions);
+
     const gififyStream = gifify(videoUrl, gififyOptions);
 
     const gifStorageResults = await (new StorageManager())
