@@ -179,8 +179,17 @@ router.post("/", upload.single("video"), asyncMiddleware(async (req: express.Req
 
     const fileStorageManager = new StorageManager();
     const fileUploadingPromise = fileStorageManager
-        .fileName(req.user._id.toString() + "/" + Utilities.randomString(24))
-        .fromBuffer(req.file.buffer, [MimeType.VIDEO_MP4]);
+        .directory(req.user._id.toString())
+        .fileName(Utilities.randomString(24))
+        .fromBuffer(
+            req.file.buffer,
+            {
+                allowedMimeTypes: [MimeType.VIDEO_MP4],
+                knownData: {
+                    mime: req.file.mimetype,
+                    ext: "mp4"
+                }
+            });
 
     const fileUploadingResults = await fileUploadingPromise;
 
@@ -525,11 +534,9 @@ router.post("/:post/comment", asyncMiddleware(async (req: express.Request, res: 
             await post.save();
 
             const mentionedUsernames = getUsernameMentionsByText(text);
-            console.log(mentionedUsernames);
 
             if ( mentionedUsernames.length ) {
                 const mentionedUsers = await User.find({username: {$in: mentionedUsernames}, _id: { $ne: post.creator._id}});
-                console.log(mentionedUsers);
 
                 if ( mentionedUsers.length ) {
                     await sendCommentMentionsNotification(mentionedUsers, req.user, comment);

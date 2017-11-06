@@ -45,7 +45,7 @@ export class UploadProfilePicture {
         }
 
         const storageManager = new StorageManager();
-        const fileName = this._userId + "/" + Utilities.randomString(24);
+        const fileName = Utilities.randomString(24);
         const thumbnailFileName = fileName + ".thumb";
 
         const thumbnailCreationBuffer = await sharp(this._buffer)
@@ -58,12 +58,24 @@ export class UploadProfilePicture {
         ];
 
         const profileImageUploadingPromise = storageManager
+            .directory(this._userId)
             .fileName(fileName)
-            .fromBuffer(this._buffer, allowedMimeTypes);
+            .fromBuffer(
+                this._buffer,
+                {
+                    allowedMimeTypes: allowedMimeTypes
+                }
+            );
 
         const thumbnailUploadingPromise = storageManager
+            .directory(this._userId)
             .fileName(thumbnailFileName)
-            .fromBuffer(thumbnailCreationBuffer, allowedMimeTypes);
+            .fromBuffer(
+                thumbnailCreationBuffer,
+                {
+                    allowedMimeTypes: allowedMimeTypes
+                }
+            );
 
         const promisesResponse = await Promise.all([profileImageUploadingPromise, thumbnailUploadingPromise]);
 

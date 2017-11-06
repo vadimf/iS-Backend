@@ -7,6 +7,7 @@ import * as Stream from "stream";
 export class StorageManager {
     private static _bucket: Bucket;
     private _fileName: string;
+    private _directory: string;
 
     private static _initializeBucket() {
         admin.initializeApp({
@@ -33,6 +34,11 @@ export class StorageManager {
         return process.env.FIREBASE_PROJECT_ID + ".appspot.com";
     }
 
+    directory(directory: string) {
+        this._directory = directory;
+        return this;
+    }
+
     fileName(fileName: string) {
         this._fileName = fileName;
         return this;
@@ -42,10 +48,10 @@ export class StorageManager {
      * Upload file from buffer
      *
      * @param {Buffer} buffer
-     * @param {Array<string>} allowedMimeTypes
+     * @param options
      * @returns {Promise<{url: string}>}
      */
-    fromBuffer(buffer: Buffer, allowedMimeTypes: Array<string>): Promise<{url: string}> {
+    fromBuffer(buffer: Buffer, options?: {allowedMimeTypes?: string[], knownData?: {ext: string, mime: string}}): Promise<{url: string}> {
         const that = this;
 
         return new Promise((resolve, reject) => {
@@ -59,16 +65,29 @@ export class StorageManager {
                 });
             }
 
-            const fileType = FileType(buffer);
+            let fileType: {ext: string, mime: string};
+            if ( options.knownData && options.knownData.ext && options.knownData.mime ) {
+                fileType = options.knownData;
+            }
+            else {
+                fileType = FileType(buffer);
+            }
 
-            if ( ! (allowedMimeTypes.indexOf(fileType.mime.toString()) > -1) ) {
+            if ( ! fileType ) {
+                return reject({
+                    uploadingError: "Unable to retrieve mime-type from file"
+                });
+            }
+
+            if ( options.allowedMimeTypes && ! (options.allowedMimeTypes.indexOf(fileType.mime.toString()) > -1) ) {
                 return reject({
                     uploadingError: "Extension '" + fileType.ext + "' isn't allowed"
                 });
             }
 
             const fileName = that._fileName + "." + fileType.ext;
-            const bucketFile = StorageManager.bucket.file(fileName);
+            const fullFileName = (this._directory ? this._directory + "/" : "") + fileName;
+            const bucketFile = StorageManager.bucket.file(fullFileName);
             const stream = bucketFile
                 .createWriteStream({
                     metadata: {
@@ -84,8 +103,10 @@ export class StorageManager {
                 })
                 .on("finish", async () => {
                     await bucketFile.makePublic();
+                    const url = StorageManager.getPublicUrl(fullFileName);
+                    console.log("Finished uploading file to:", url);
                     return resolve({
-                        url: StorageManager.getPublicUrl(fileName)
+                        url: url
                     });
                 })
                 .end(buffer);
@@ -106,7 +127,8 @@ export class StorageManager {
             }
 
             const fileName = that._fileName + "." + options.ext;
-            const bucketFile = StorageManager.bucket.file(fileName);
+            const fullFileName = (this._directory ? this._directory + "/" : "") + fileName;
+            const bucketFile = StorageManager.bucket.file(fullFileName);
             const bucketStream = bucketFile
                 .createWriteStream({
                     metadata: {
@@ -122,8 +144,10 @@ export class StorageManager {
                 })
                 .on("finish", async () => {
                     await bucketFile.makePublic();
+                    const url = StorageManager.getPublicUrl(fullFileName);
+                    console.log("Finished uploading file to:", url);
                     return resolve({
-                        url: StorageManager.getPublicUrl(fileName)
+                        url: url
                     });
                 });
 
@@ -149,10 +173,4 @@ export class MimeType {
     static IMAGE_GIF = "image/gif";
     static IMAGE_PNG = "image/png";
     static IMAGE_JPEG = "image/jpeg";
-}
-
-export interface IFile {
-    mimetype: string;
-    buffer: Buffer;
-    size: number;
 }
