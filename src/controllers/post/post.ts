@@ -191,16 +191,23 @@ router.post("/", upload.single("video"), asyncMiddleware(async (req: express.Req
                 }
             });
 
+    console.log("Video file uploading started");
     const fileUploadingResults = await fileUploadingPromise;
+    console.log("Video file uploading finished");
 
     if ( fileUploadingResults ) {
+        console.log("Video file, calculating duration");
         const duration = await getVideoDurationByUrl(fileUploadingResults.url);
+        console.log("Video file duration", duration);
+
+        console.log("Started uploading GIF file");
         const gifThumbnailUrl = await convertVideoToGif(
             fileUploadingResults.url,
             req.user._id.toString() + "/" + Utilities.randomString(24),
             duration,
             3
         );
+        console.log("Gif file uploaded");
 
         post.video = {
             url: fileUploadingResults.url,
