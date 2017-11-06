@@ -13,12 +13,10 @@ export class StorageManager {
     private static _initializeBucket() {
         fs.readFile(__dirname + "/../../firebase.pem", "utf8", (err, data) => {
             if ( ! err ) {
-                console.log(data);
-
                 const options = {
                     credential: admin.credential.cert({
                         projectId: process.env.FIREBASE_PROJECT_ID,
-                        privateKey: process.env.FIREBASE_PRIVATE_KEY,
+                        privateKey: data,
                         clientEmail: process.env.FIREBASE_CLIENT_EMAIL
                     }),
                     databaseURL: process.env.FIREBASE_DATABASE_URL
