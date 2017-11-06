@@ -195,16 +195,16 @@ router.post("/", upload.single("video"), asyncMiddleware(async (req: express.Req
 
     if ( fileUploadingResults ) {
         const duration = await getVideoDurationByUrl(fileUploadingResults.url);
-        const gifThumbnailUrl = await convertVideoToGif(
-            fileUploadingResults.url,
-            req.user._id.toString() + "/" + Utilities.randomString(24),
-            duration,
-            3
-        );
+        // const gifThumbnailUrl = await convertVideoToGif(
+        //     fileUploadingResults.url,
+        //     req.user._id.toString() + "/" + Utilities.randomString(24),
+        //     duration,
+        //     3
+        // );
 
         post.video = {
             url: fileUploadingResults.url,
-            thumbnail: gifThumbnailUrl,
+            thumbnail: "maty",
             duration: duration
         };
     }
