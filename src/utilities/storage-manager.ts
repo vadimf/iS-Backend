@@ -11,25 +11,20 @@ export class StorageManager {
     private _directory: string;
 
     private static _initializeBucket() {
-        fs.readFile(__dirname + "/../../firebase.pem", "utf8", (err, data) => {
-            if ( ! err ) {
-                const options = {
-                    credential: admin.credential.cert({
-                        projectId: process.env.FIREBASE_PROJECT_ID,
-                        privateKey: data,
-                        clientEmail: process.env.FIREBASE_CLIENT_EMAIL
-                    }),
-                    databaseURL: process.env.FIREBASE_DATABASE_URL
-                };
+        const firebasePrivateCertificate = fs.readFileSync(__dirname + "/../../firebase.pem", "utf8");
 
-                admin.initializeApp(options);
+        const options = {
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                privateKey: firebasePrivateCertificate,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL
+            }),
+            databaseURL: process.env.FIREBASE_DATABASE_URL
+        };
 
-                StorageManager._bucket = admin.storage().bucket(StorageManager._getBucketName());
-            }
-            else {
-                throw new Error("Unable to read firebase.pem file from " + __dirname + "/../../firebase.pem");
-            }
-        });
+        admin.initializeApp(options);
+
+        StorageManager._bucket = admin.storage().bucket(StorageManager._getBucketName());
     }
 
     static get bucket(): Bucket {

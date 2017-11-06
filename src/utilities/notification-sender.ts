@@ -12,23 +12,20 @@ export class NotificationSender {
 
     constructor(tokens: string|string[]) {
         if ( ! NotificationSender._initialized ) {
-            fs.readFile(__dirname + "/../../firebase.pem", "utf8", (err, data) => {
-                if ( ! err ) {
-                    admin.initializeApp({
-                        credential: admin.credential.cert({
-                            projectId: process.env.FIREBASE_PROJECT_ID,
-                            privateKey: data,
-                            clientEmail: process.env.FIREBASE_CLIENT_EMAIL
-                        }),
-                        databaseURL: process.env.FIREBASE_DATABASE_URL
-                    });
+            const firebasePrivateCertificate = fs.readFileSync(__dirname + "/../../firebase.pem", "utf8");
 
-                    NotificationSender._initialized = true;
-                }
-                else {
-                    throw new Error("Unable to read firebase.pem file from " + __dirname + "/../../firebase.pem");
-                }
-            });
+            const options = {
+                credential: admin.credential.cert({
+                    projectId: process.env.FIREBASE_PROJECT_ID,
+                    privateKey: firebasePrivateCertificate,
+                    clientEmail: process.env.FIREBASE_CLIENT_EMAIL
+                }),
+                databaseURL: process.env.FIREBASE_DATABASE_URL
+            };
+
+            admin.initializeApp(options);
+
+            NotificationSender._initialized = true;
         }
 
         this._tokens = tokens instanceof Array ? tokens : [tokens];
