@@ -3,6 +3,7 @@ import {Bucket} from "../../node_modules/firebase-admin/node_modules/@types/goog
 import {Utilities} from "./utilities";
 import * as FileType from "file-type";
 import * as Stream from "stream";
+import * as fs from "fs";
 
 export class StorageManager {
     private static _bucket: Bucket;
@@ -10,24 +11,27 @@ export class StorageManager {
     private _directory: string;
 
     private static _initializeBucket() {
-        console.log("Initializing firebase", {
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL
+        fs.readFile(__dirname + "/../../firebase.pem", (err, data) => {
+            if ( ! err ) {
+                console.log(data);
+
+                const options = {
+                    credential: admin.credential.cert({
+                        projectId: process.env.FIREBASE_PROJECT_ID,
+                        privateKey: process.env.FIREBASE_PRIVATE_KEY,
+                        clientEmail: process.env.FIREBASE_CLIENT_EMAIL
+                    }),
+                    databaseURL: process.env.FIREBASE_DATABASE_URL
+                };
+
+                admin.initializeApp(options);
+
+                StorageManager._bucket = admin.storage().bucket(StorageManager._getBucketName());
+            }
+            else {
+                throw new Error("Unable to read firebase.pem file from " + __dirname + "/../../firebase.pem");
+            }
         });
-
-        const options = {
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL
-            }),
-            databaseURL: process.env.FIREBASE_DATABASE_URL
-        };
-
-        admin.initializeApp(options);
-
-        StorageManager._bucket = admin.storage().bucket(StorageManager._getBucketName());
     }
 
     static get bucket(): Bucket {
