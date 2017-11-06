@@ -37,7 +37,9 @@ const app = express();
  */
 // mongoose.Promise = global.Promise;
 
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI);
+mongoose.connect(
+    (process.env.MONGODB_URI || process.env.MONGOLAB_URI)
+);
 
 mongoose.connection.on("error", () => {
   console.log("MongoDB connection error. Please make sure MongoDB is running.");
@@ -105,7 +107,7 @@ app.use(function(req, res, next) {
         console.log(req.headers);
 
         const contentType = req.headers["content-type"];
-        const jsonResponse = contentType === "application/json";
+        const jsonResponse = contentType.indexOf("application/json") >= 0;
 
         let error: AppError;
         let message: string = "";

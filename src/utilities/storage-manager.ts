@@ -10,14 +10,17 @@ export class StorageManager {
     private _directory: string;
 
     private static _initializeBucket() {
-        admin.initializeApp({
+        const options = {
             credential: admin.credential.cert({
                 projectId: process.env.FIREBASE_PROJECT_ID,
                 privateKey: process.env.FIREBASE_PRIVATE_KEY,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL
             }),
             databaseURL: process.env.FIREBASE_DATABASE_URL
-        });
+        };
+
+        console.log("Initializing firebase", options);
+        admin.initializeApp(options);
 
         StorageManager._bucket = admin.storage().bucket(StorageManager._getBucketName());
     }

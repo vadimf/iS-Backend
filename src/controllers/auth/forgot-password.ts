@@ -186,7 +186,7 @@ function sendPasswordRestorationEmail(user: IUserModel) {
  */
 router.patch("/reset", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const contentType = req.headers["content-type"];
-    const jsonResponse = contentType === "application/json";
+    const jsonResponse = contentType.indexOf("application/json") >= 0;
 
     req.checkQuery({
         "token": {
