@@ -11,7 +11,7 @@ export class StorageManager {
     private _directory: string;
 
     private static _initializeBucket() {
-        fs.readFile(__dirname + "/../../firebase.pem", (err, data) => {
+        fs.readFile(__dirname + "/../../firebase.pem", "utf8", (err, data) => {
             if ( ! err ) {
                 console.log(data);
 
