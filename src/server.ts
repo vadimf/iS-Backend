@@ -37,12 +37,12 @@ const app = express();
  */
 // mongoose.Promise = global.Promise;
 
-mongoose.connect(
-    (process.env.MONGODB_URI || process.env.MONGOLAB_URI)
-);
+const mongoDbUri = (process.env.MONGODB_URI || process.env.MONGOLAB_URI);
+
+mongoose.connect(mongoDbUri);
 
 mongoose.connection.on("error", () => {
-  console.log("MongoDB connection error. Please make sure MongoDB is running.");
+  console.log("MongoDB connection error. Please make sure MongoDB is running.", mongoDbUri);
   process.exit();
 });
 
