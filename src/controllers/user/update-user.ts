@@ -46,7 +46,7 @@ async function updateEmail(req: express.Request) {
             }
         });
 
-        const email: string = req.body.user.email;
+        const email: string = req.body.user.email.toLowerCase();
 
         if ( email ) {
             const foundUser = await User.findOne({email: email});
@@ -144,7 +144,7 @@ function updateBio(req: express.Request) {
  * @returns {Promise<void>}
  */
 async function updateProfileImage(req: express.Request) {
-    if ( ! req.body.user.profile.picture ) {
+    if ( ! req.body.user.profile.picture || typeof req.body.user.profile.picture !== "string" ) {
         return;
     }
 
@@ -214,7 +214,7 @@ async function updateUsername(req: express.Request) {
     req.checkBody({
         "user[username]": {
             matches: {
-                options: Utilities.stringToRegExp(SystemConfiguration.validations.username.regex),
+                options: Utilities.stringToRegExp("/" + SystemConfiguration.validations.username.regex + "/"),
                 errorMessage: "Username doesn't match regex"
             },
             isLength: {

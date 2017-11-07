@@ -8,7 +8,7 @@ const StaticPages = {
 const UsernameValidation = {
     minLength           : 4,
     maxLength           : 16,
-    regex               : "/^[a-z0-9_.]+$/i"
+    regex               : "^[a-z0-9_.]+$"
 };
 
 const FirstNameValidation = {

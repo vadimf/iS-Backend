@@ -96,7 +96,7 @@ async function createUserByFacebookUser(facebookUser: IFacebookUser): Promise<IU
     let user = null;
 
     if ( facebookUser.email ) {
-        user = await User.findOne({email: facebookUser.email});
+        user = await User.findOne({email: facebookUser.email.toLowerCase()});
     }
 
     if ( ! user ) {

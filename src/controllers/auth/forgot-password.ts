@@ -107,7 +107,7 @@ router
             return;
         }
 
-        const email: string = req.body.email;
+        const email: string = req.body.email.toLowerCase();
 
         const user = await User.findOne({email: email});
         if ( ! user ) {

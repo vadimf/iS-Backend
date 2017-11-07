@@ -59,7 +59,7 @@ router.post("/signup", asyncMiddleware(async (req: express.Request, res: express
         return;
     }
 
-    const email: string = req.body.email;
+    const email: string = req.body.email.toLowerCase();
     const password: string = req.body.password;
 
     const userByEmail = await User.findOne({email: email});
@@ -139,7 +139,7 @@ router.post("/signin", asyncMiddleware(async (req: express.Request, res: express
         return;
     }
 
-    const email: string = req.body.email;
+    const email: string = req.body.email.toLowerCase();
     const password: string = req.body.password;
 
     const userByEmail = await User.findOne({email: email});
