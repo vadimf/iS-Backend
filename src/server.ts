@@ -1,15 +1,15 @@
-import * as express from "express";
-import * as bodyParser from "body-parser";
-import * as logger from "morgan";
-import * as lusca from "lusca";
-import * as dotenv from "dotenv";
-import * as compression from "compression";
-import * as path from "path";
-import * as mongoose from "mongoose";
-// import * as flash from "express-flash";
-import * as helmet from "helmet";
-import expressValidator = require("express-validator");
+import * as express         from "express";
+import * as bodyParser      from "body-parser";
+import * as logger          from "morgan";
+import * as lusca           from "lusca";
+import * as dotenv          from "dotenv";
+import * as compression     from "compression";
+import * as path            from "path";
+import * as mongoose        from "mongoose";
+import * as helmet          from "helmet";
+import expressValidator =   require("express-validator");
 
+// import * as flash from "express-flash";
 // import * as mongo from "connect-mongo";
 // import * as session from "express-session";
 // import * as errorHandler from "errorhandler";
@@ -39,12 +39,18 @@ const app = express();
 
 const mongoDbUri = (process.env.MONGODB_URI || process.env.MONGOLAB_URI);
 
-mongoose.connect(mongoDbUri);
-
-mongoose.connection.on("error", () => {
-  console.log("MongoDB connection error. Please make sure MongoDB is running.", mongoDbUri);
-  process.exit();
-});
+mongoose.connect(
+    mongoDbUri,
+    {
+        useMongoClient: true
+    },
+    (err: any) => {
+        if ( err ) {
+            console.log("MongoDB connection error. Please make sure MongoDB is running.", mongoDbUri);
+            process.exit();
+        }
+    }
+);
 
 /**
  * Express configuration.

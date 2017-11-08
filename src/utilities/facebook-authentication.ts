@@ -33,8 +33,16 @@ export class FacebookAuthentication {
     }
 
     async getUser(): Promise<IFacebookUser> {
+        console.log("me?fields=" + this._fields.join(","));
         return await this._graph.get("me?fields=" + this._fields.join(","));
     }
+}
+
+interface FacebookPaging {
+    cursors: {
+        before: string,
+        after: string
+    };
 }
 
 export interface IFacebookUser {
@@ -49,6 +57,13 @@ export interface IFacebookUser {
             width?: number,
             is_silhouette?: boolean,
             url?: string
+        }
+    },
+    friends?: {
+        data: IFacebookUser[],
+        paging?: FacebookPaging,
+        summary: {
+            total_count: number
         }
     };
 }
