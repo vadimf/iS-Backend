@@ -175,14 +175,6 @@ async function updateProfileImage(req: express.Request) {
         return;
     }
 
-    // req.checkBody({
-    //     "user[profile][picture][upload]": {
-    //         is: {
-    //             errorMessage: "Base64 invalid"
-    //         }
-    //     }
-    // });
-
     if ( req.validationErrors() ) {
         return;
     }

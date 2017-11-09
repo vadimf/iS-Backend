@@ -111,7 +111,7 @@ router.get("/facebook", asyncMiddleware(async (req: express.Request, res: expres
             facebookUserIds.push(facebookFriend.id);
         }
 
-        userSuggestions = await User.find({facebookId: {$in: facebookUserIds}});
+        userSuggestions = await User.find({facebookId: {$in: facebookUserIds}, username: { $nin: [ null, "" ] }, _id: {$ne: req.user._id}});
         await populateFollowing(userSuggestions, req.user);
 
         if ( facebookUser.friends.paging ) {
