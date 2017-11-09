@@ -171,12 +171,12 @@ function updateBio(req: express.Request) {
  * @returns {Promise<void>}
  */
 async function updateProfileImage(req: express.Request) {
-    if ( ! req.body.user.profile.picture || typeof req.body.user.profile.picture !== "string" ) {
+    if ( ! req.body.user.profile.picture || ! req.body.user.profile.picture.upload ) {
         return;
     }
 
     req.checkBody({
-        "user[profile][picture]": {
+        "user[profile][picture][upload]": {
             isBase64: {
                 errorMessage: "Base64 invalid"
             }
@@ -187,7 +187,7 @@ async function updateProfileImage(req: express.Request) {
         return;
     }
 
-    const imageBase64 = req.body.user.profile.picture;
+    const imageBase64 = req.body.user.profile.picture.upload;
 
     const uploadProfilePicture = new UploadProfilePicture(req.user._id.toString());
 
