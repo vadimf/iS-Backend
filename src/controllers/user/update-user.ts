@@ -130,7 +130,7 @@ function updateWebsite(req: express.Request) {
             req.checkBody({
                 "user[profile][website]": {
                     matches: {
-                        options: /^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/,
+                        options: /^([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/,
                         errorMessage: "Website URL invalid"
                     }
                 }

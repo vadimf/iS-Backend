@@ -121,7 +121,7 @@ app.use(function(req, res, next) {
             }
         }
 
-        const jsonResponse = contentType.indexOf("application/json") >= 0;
+        const jsonResponse = contentType && contentType.indexOf("application/json") >= 0;
 
         let error: AppError;
         let message: string = "";

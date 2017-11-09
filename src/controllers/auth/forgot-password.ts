@@ -69,7 +69,7 @@ router
                 contentType = req.headers["ContentType"];
             }
         }
-        const jsonResponse = contentType === "application/json";
+        const jsonResponse = contentType && contentType.indexOf("application/json") >= 0;
         const token: string = req.query.token;
 
         let user: IUserModel;

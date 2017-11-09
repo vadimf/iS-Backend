@@ -12,13 +12,13 @@ const UsernameValidation = {
 };
 
 const FirstNameValidation = {
-    minLength           : 4,
+    minLength           : 2,
     maxLength           : 16,
     regex               : "/\\b[^\\d\\W]+\\b/"
 };
 
 const LastNameValidation = {
-    minLength           : 4,
+    minLength           : 2,
     maxLength           : 16,
     regex               : "/\\b[^\\d\\W]+\\b/"
 };
