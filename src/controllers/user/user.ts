@@ -56,7 +56,7 @@ router
      * @apiParam {Profile}        user.profile User's profile metadata
      * @apiParam {String}             user.profile.firstName First name
      * @apiParam {String}             user.profile.lastName Last name
-     * @apiParam {String}             user.profile.picture User's profile picture <code>base64</code>
+     * @apiParam {String}             user.profile.picture.upload User's profile picture <code>base64</code>
      * @apiParam {String}             user.profile.bio User's bio
      * @apiParam {String}             user.profile.website User's website
      *
