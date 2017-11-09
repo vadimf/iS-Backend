@@ -61,7 +61,14 @@ router
             return;
         }
 
-        const contentType = req.headers["content-type"];
+        let contentType = req.headers["content-type"];
+        if ( ! contentType ) {
+            contentType = req.headers["Content-Type"];
+
+            if ( ! contentType ) {
+                contentType = req.headers["ContentType"];
+            }
+        }
         const jsonResponse = contentType === "application/json";
         const token: string = req.query.token;
 

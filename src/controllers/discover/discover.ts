@@ -1,6 +1,6 @@
 import * as express from "express";
 import {Pagination} from "../../models/pagination";
-import {foreignUsersArray, ForeignUserStub, IUserModel, populateFollowing, User} from "../../models/user";
+import {foreignUsersArray, IUserModel, populateFollowing, User} from "../../models/user";
 import {FacebookAuthentication} from "../../utilities/facebook-authentication";
 import {asyncMiddleware} from "../../server";
 import {AppError} from "../../models/app-error";
@@ -39,7 +39,7 @@ router.get("/suggestions", asyncMiddleware(async (req: express.Request, res: exp
     const pagination = new Pagination(page, total);
 
     const users = await User
-        .find({username: { "$nin": [ null, "" ] }})
+        .find({username: { $nin: [ null, "" ] }})
         .sort("-followers")
         .limit(pagination.resultsPerPage)
         .skip(pagination.offset);
@@ -104,7 +104,7 @@ router.get("/facebook", asyncMiddleware(async (req: express.Request, res: expres
     let userSuggestions: IUserModel[] = [];
     let nextPage = "";
 
-    if ( facebookUser.friends.data ) {
+    if ( facebookUser.friends && facebookUser.friends.data ) {
         const facebookUserIds: string[] = [];
 
         for ( const facebookFriend of facebookUser.friends.data ) {

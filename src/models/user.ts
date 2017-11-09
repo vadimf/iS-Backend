@@ -252,26 +252,6 @@ UserSchema.methods.toForeignUser = function(): IForeignUser {
 };
 
 
-const CreatedAtDateStub = new Date("2017-10-17T08:20:38.339Z");
-
-
-export const ForeignUserStub = {
-    "username": "matymichalsky",
-    "profile": {
-        "firstName": "Maty",
-        "lastName": "Michalsky",
-        "picture": {
-            "url": "https://scontent.fsdv2-1.fna.fbcdn.net/v/t1.0-9/19702223_10203302270553950_2168285220720904719_n.jpg?oh=341ab8c1a622361a854488368acbe7bd&oe=5A82EA0B",
-            "thumbnail": "https://scontent.fsdv2-1.fna.fbcdn.net/v/t1.0-9/19702223_10203302270553950_2168285220720904719_n.jpg?oh=341ab8c1a622361a854488368acbe7bd&oe=5A82EA0B"
-        },
-        "bio": "Hello, It's me :)"
-    },
-    "followers": 0,
-    "following": 0,
-    "isFollowing": false,
-    "createdAt": CreatedAtDateStub
-};
-
 export function foreignUsersArray(users: IUserModel[]): IForeignUser[] {
     const parsedUsers: IForeignUser[] = [];
 

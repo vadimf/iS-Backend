@@ -112,7 +112,15 @@ app.use(function(req, res, next) {
     res.error = function(e: any, meta?: any) {
         console.log(req.headers);
 
-        const contentType = req.headers["content-type"];
+        let contentType = req.headers["content-type"];
+        if ( ! contentType ) {
+            contentType = req.headers["Content-Type"];
+
+            if ( ! contentType ) {
+                contentType = req.headers["ContentType"];
+            }
+        }
+
         const jsonResponse = contentType.indexOf("application/json") >= 0;
 
         let error: AppError;
