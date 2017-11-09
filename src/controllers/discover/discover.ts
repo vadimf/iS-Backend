@@ -118,14 +118,17 @@ router.get("/facebook", asyncMiddleware(async (req: express.Request, res: expres
             nextPage = facebookUser.friends.paging.cursors.after;
         }
 
-        User.findOne({facebookId: facebookUser.id})
-            .then((userWithSameFacebookId) => {
-                if ( ! userWithSameFacebookId ) {
-                    req.user.facebookId = facebookUser.id;
-                    req.user.save();
-                }
-            })
-            .catch(() => {});
+        if ( ! req.user.facebookId ) {
+            User.findOne({facebookId: facebookUser.id})
+                .then((userWithSameFacebookId) => {
+                    if (!userWithSameFacebookId) {
+                        req.user.facebookId = facebookUser.id;
+                        req.user.save();
+                    }
+                })
+                .catch(() => {
+                });
+        }
     }
 
     res.response({
