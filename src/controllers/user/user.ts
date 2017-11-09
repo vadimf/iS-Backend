@@ -32,13 +32,12 @@ router
      * @apiSuccess {String}                 user.profile.picture.url Url
      * @apiSuccess {String}                 user.profile.picture.thumbnail Thumbnail url
      * @apiSuccess {String}             user.profile.bio Bio text
+     * @apiSuccess {String}             user.profile.website User's website URL
      * @apiSuccess {int}            user.following Following counter
      * @apiSuccess {int}            user.followers Followers counter
      * @apiSuccess {String}         user.createdAt Date registered
      */
     .get((req: express.Request, res: express.Response) => {
-        // TODO: Populate "followers" and "following" fields
-
         res.response({user: req.user.toLoggedUser()});
     })
 
@@ -58,6 +57,8 @@ router
      * @apiParam {String}             user.profile.firstName First name
      * @apiParam {String}             user.profile.lastName Last name
      * @apiParam {String}             user.profile.picture User's profile picture <code>base64</code>
+     * @apiParam {String}             user.profile.bio User's bio
+     * @apiParam {String}             user.profile.website User's website
      *
      * @apiSuccess {User}       user My user object
      * @apiSuccess {String}         user.username Username
@@ -73,6 +74,7 @@ router
      * @apiSuccess {String}                 user.profile.picture.url Url
      * @apiSuccess {String}                 user.profile.picture.thumbnail Thumbnail url
      * @apiSuccess {String}             user.profile.bio Bio text
+     * @apiSuccess {String}             user.profile.website User's website URL
      * @apiSuccess {int}            user.following Following counter
      * @apiSuccess {int}            user.followers Followers counter
      * @apiSuccess {String}         user.createdAt Date registered
@@ -141,6 +143,7 @@ export async function getFollowsByConditions(conditions: any, followers = false,
  * @apiSuccess {String}                 users.profile.picture.url Url
  * @apiSuccess {String}                 users.profile.picture.thumbnail Thumbnail url
  * @apiSuccess {String}             users.profile.bio Bio text
+ * @apiSuccess {String}             user.profile.website User's website URL
  * @apiSuccess {int}            users.following Following counter
  * @apiSuccess {int}            users.followers Followers counter
  * @apiSuccess {boolean}            users.isFollowing Already following this user
@@ -172,6 +175,7 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
  * @apiSuccess {String}                 users.profile.picture.url Url
  * @apiSuccess {String}                 users.profile.picture.thumbnail Thumbnail url
  * @apiSuccess {String}             users.profile.bio Bio text
+ * @apiSuccess {String}             users.profile.website User's website URL
  * @apiSuccess {int}            users.following Following counter
  * @apiSuccess {int}            users.followers Followers counter
  * @apiSuccess {boolean}        users.isFollowing Already following this user
@@ -206,6 +210,7 @@ router.get("/followers", asyncMiddleware(async (req: express.Request, res: expre
  * @apiSuccess {String}                     posts.creator.profile.picture.url Url
  * @apiSuccess {String}                     posts.creator.profile.picture.thumbnail Thumbnail url
  * @apiSuccess {String}                 posts.creator.profile.bio Bio text
+ * @apiSuccess {String}                 posts.creator.profile.website User's website URL
  * @apiSuccess {int}                posts.creator.following Following counter
  * @apiSuccess {int}                posts.creator.followers Followers counter
  * @apiSuccess {boolean}            posts.creator.isFollowing Already following this user

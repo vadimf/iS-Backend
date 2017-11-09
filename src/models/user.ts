@@ -11,6 +11,7 @@ export interface IUserProfileModel {
     lastName: string;
     picture: IUserPicture;
     bio: string;
+    website: string;
 }
 
 export const ProfileSchema = new mongoose.Schema(
@@ -20,7 +21,8 @@ export const ProfileSchema = new mongoose.Schema(
         picture: {
             type: UserPictureSchema
         },
-        bio: String
+        bio: String,
+        website: String
     },
     {
         toJSON: {

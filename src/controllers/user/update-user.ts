@@ -26,6 +26,7 @@ export async function updateUserDetails(req: express.Request) {
             await updateProfileImage(req);
             await updateFirstName(req);
             await updateLastName(req);
+            await updateWebsite(req);
             await updateBio(req);
         }
     }
@@ -115,6 +116,28 @@ function updateLastName(req: express.Request) {
         }
 
         req.user.profile.lastName = req.body.user.profile.lastName;
+    }
+}
+
+/**
+ * Update the user's website
+ *
+ * @param {e.Request} req
+ */
+function updateWebsite(req: express.Request) {
+    if ( ! isNullOrUndefined(req.body.user.profile.website) ) {
+        if ( req.body.user.profile.website ) {
+            req.checkBody({
+                "user[profile][website]": {
+                    matches: {
+                        options: /^((http[s]?|ftp):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/,
+                        errorMessage: "Website URL invalid"
+                    }
+                }
+            });
+        }
+
+        req.user.profile.website = req.body.user.profile.website;
     }
 }
 
