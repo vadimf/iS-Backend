@@ -67,21 +67,23 @@ async function updateEmail(req: express.Request) {
  */
 function updateFirstName(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.firstName) ) {
-        req.checkBody({
-            "user[profile][firstName]": {
-                matches: {
-                    options: Utilities.stringToRegExp(SystemConfiguration.validations.firstName.regex),
-                    errorMessage: "First-name doesn't match regex"
-                },
-                isLength: {
-                    options: [{
-                        min: SystemConfiguration.validations.firstName.minLength,
-                        max: SystemConfiguration.validations.firstName.maxLength
-                    }],
-                    errorMessage: "First-name length is invalid"
+        if ( req.body.user.profile.firstName ) {
+            req.checkBody({
+                "user[profile][firstName]": {
+                    matches: {
+                        options: Utilities.stringToRegExp(SystemConfiguration.validations.firstName.regex),
+                        errorMessage: "First-name doesn't match regex"
+                    },
+                    isLength: {
+                        options: [{
+                            min: SystemConfiguration.validations.firstName.minLength,
+                            max: SystemConfiguration.validations.firstName.maxLength
+                        }],
+                        errorMessage: "First-name length is invalid"
+                    }
                 }
-            }
-        });
+            });
+        }
 
         req.user.profile.firstName = req.body.user.profile.firstName;
     }
@@ -94,21 +96,23 @@ function updateFirstName(req: express.Request) {
  */
 function updateLastName(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.lastName) ) {
-        req.checkBody({
-            "user[profile][lastName]": {
-                matches: {
-                    options: Utilities.stringToRegExp(SystemConfiguration.validations.lastName.regex),
-                    errorMessage: "Last-name doesn't match regex"
-                },
-                isLength: {
-                    options: [{
-                        min: SystemConfiguration.validations.lastName.minLength,
-                        max: SystemConfiguration.validations.lastName.maxLength
-                    }],
-                    errorMessage: "Last-name length is invalid"
+        if ( req.body.user.profile.lastName ) {
+            req.checkBody({
+                "user[profile][lastName]": {
+                    matches: {
+                        options: Utilities.stringToRegExp(SystemConfiguration.validations.lastName.regex),
+                        errorMessage: "Last-name doesn't match regex"
+                    },
+                    isLength: {
+                        options: [{
+                            min: SystemConfiguration.validations.lastName.minLength,
+                            max: SystemConfiguration.validations.lastName.maxLength
+                        }],
+                        errorMessage: "Last-name length is invalid"
+                    }
                 }
-            }
-        });
+            });
+        }
 
         req.user.profile.lastName = req.body.user.profile.lastName;
     }
