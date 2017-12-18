@@ -1,11 +1,11 @@
 import * as express from "express";
-import {isNullOrUndefined} from "util";
-import {Utilities} from "../../utilities/utilities";
-import {SystemConfiguration} from "../../models/system-vars";
-import {User} from "../../models/user";
-import {AppError} from "../../models/app-error";
-import {UploadProfilePicture} from "./upload-profile-picture";
-import {StorageManager} from "../../utilities/storage-manager";
+import { isNullOrUndefined } from "util";
+import { Utilities } from "../../utilities/utilities";
+import { SystemConfiguration } from "../../models/system-vars";
+import { User } from "../../models/user";
+import { AppError } from "../../models/app-error";
+import { UploadProfilePicture } from "./upload-profile-picture";
+import { StorageManager } from "../../utilities/storage-manager";
 
 /**
  * Update all user details: Profile image, first name, last name, bio

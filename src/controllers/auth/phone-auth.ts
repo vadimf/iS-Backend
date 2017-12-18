@@ -1,13 +1,13 @@
 import * as express from "express";
 import twilio = require("twilio");
-import {asyncMiddleware} from "../../server";
-import {IPhoneNumberModel} from "../../models/phone-number";
-import PhoneConfirmationRequest, {IPhoneConfirmationRequest} from "../../models/phone-confirmation-request";
-import {isNullOrUndefined} from "util";
-import {AppError} from "../../models/app-error";
-import {IAuthTokenModel, IUserModel, User} from "../../models/user";
-import {Utilities} from "../../utilities/utilities";
-import {SystemConfiguration} from "../../models/system-vars";
+import { asyncMiddleware } from "../../server";
+import { IPhoneNumberModel } from "../../models/phone-number";
+import PhoneConfirmationRequest, { IPhoneConfirmationRequest } from "../../models/phone-confirmation-request";
+import { isNullOrUndefined } from "util";
+import { AppError } from "../../models/app-error";
+import { IAuthTokenModel, IUserModel, User } from "../../models/user";
+import { Utilities } from "../../utilities/utilities";
+import { SystemConfiguration } from "../../models/system-vars";
 
 
 /**
@@ -25,7 +25,10 @@ async function authenticateUser(phoneNumber: IPhoneNumberModel, confirmationCode
     }
 
     if ( phoneConfirmationResults ) {
-        phoneConfirmationResults.remove();
+        phoneConfirmationResults
+            .remove()
+            .then(() => {})
+            .catch(() => {});
     }
 
     const findByArguments = {
@@ -35,6 +38,10 @@ async function authenticateUser(phoneNumber: IPhoneNumberModel, confirmationCode
     };
 
     let user = await User.findOne(findByArguments);
+
+    if ( user.blocked ) {
+        throw AppError.UserBlocked;
+    }
 
     if ( ! user ) {
         user = new User;
@@ -61,7 +68,7 @@ async function authenticateUser(phoneNumber: IPhoneNumberModel, confirmationCode
  * @param {e.Request} req
  * @returns {IPhoneNumberModel}
  */
-function getPhoneNumberFromRequest(req: express.Request): IPhoneNumberModel {
+export function getPhoneNumberFromRequest(req: express.Request): IPhoneNumberModel {
     req.checkBody("phone[country]", "Phone country code is missing").notEmpty();
     req.checkBody("phone[number]", "Phone number is missing").notEmpty();
 
@@ -75,11 +82,11 @@ function getPhoneNumberFromRequest(req: express.Request): IPhoneNumberModel {
  * @param {IPhoneConfirmationRequest} phoneConfirmationRequest
  * @returns {Q.Promise<any>}
  */
-function sendConfirmationSms(phoneConfirmationRequest: IPhoneConfirmationRequest) {
+export function sendConfirmationSms(phoneConfirmationRequest: IPhoneConfirmationRequest) {
     const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
     return client.messages.create({
         body: "Your confirmation code is: " + phoneConfirmationRequest.code,
-        to: phoneConfirmationRequest.country + phoneConfirmationRequest.area + phoneConfirmationRequest.number,
+        to: phoneConfirmationRequest.toString(),
         from: process.env.TWILIO_FROM
     });
 }
@@ -88,6 +95,13 @@ function sendConfirmationSms(phoneConfirmationRequest: IPhoneConfirmationRequest
 
 
 const router = express.Router();
+
+export function generatePhoneConfirmationRequest(phoneNumber: IPhoneNumberModel): IPhoneConfirmationRequest {
+    const phoneConfirmationRequest = new PhoneConfirmationRequest(phoneNumber);
+    phoneConfirmationRequest.code = Utilities.randomString(SystemConfiguration.confirmationCodeLength, "0123456789");
+
+    return phoneConfirmationRequest;
+}
 
 /**
  * @api {post} /auth/phone/request Authenticate via SMS
@@ -108,8 +122,7 @@ router.post("/request", asyncMiddleware(async (req: express.Request, res: expres
         return;
     }
 
-    const phoneConfirmationRequest = new PhoneConfirmationRequest(phoneNumber);
-    phoneConfirmationRequest.code = Utilities.randomString(SystemConfiguration.confirmationCodeLength, "0123456789");
+    const phoneConfirmationRequest = generatePhoneConfirmationRequest(phoneNumber);
 
     await sendConfirmationSms(phoneConfirmationRequest);
     await phoneConfirmationRequest.save();

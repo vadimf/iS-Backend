@@ -1,9 +1,9 @@
 import * as express from "express";
-import {isAuthenticated} from "../../config/passport";
-import {default as PhoneAuthenticationRouter} from "./phone-auth";
-import {default as ManualAuthenticationRouter} from "./manual-auth";
-import {default as FacebookAuthenticationRouter} from "./facebook-auth";
-import {default as ForgotPasswordRouter} from "./forgot-password";
+import { isAuthenticated } from "../../config/passport";
+import {default as PhoneAuthenticationRouter } from "./phone-auth";
+import {default as ManualAuthenticationRouter } from "./manual-auth";
+import {default as FacebookAuthenticationRouter } from "./facebook-auth";
+import {default as ForgotPasswordRouter } from "./forgot-password";
 
 
 const router = express.Router();

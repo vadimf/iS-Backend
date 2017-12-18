@@ -1,8 +1,8 @@
 import * as express from "express";
-import {Post} from "../../models/post";
-import {asyncMiddleware} from "../../server";
-import {Pagination} from "../../models/pagination";
-import {populateFollowing} from "../../models/user";
+import { Post } from "../../models/post";
+import { asyncMiddleware } from "../../server";
+import { Pagination } from "../../models/pagination";
+import { populateFollowing } from "../../models/user";
 
 const router = express.Router();
 

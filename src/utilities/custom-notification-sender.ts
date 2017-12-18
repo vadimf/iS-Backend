@@ -1,7 +1,7 @@
-import {NotificationSender} from "./notification-sender";
-import {IUserModel} from "../models/user";
-import {ICommentModel} from "../models/comment";
-import * as mongoose from "mongoose";
+import { NotificationSender } from "./notification-sender";
+import { IUserModel } from "../models/user";
+import { ICommentModel } from "../models/comment";
+import { IPost } from "../models/post";
 
 export class CustomNotificationSender extends NotificationSender {
     constructor(users: IUserModel|IUserModel[]) {
@@ -51,10 +51,29 @@ export class CustomNotificationSender extends NotificationSender {
     comment(byUser: IUserModel, comment: ICommentModel) {
         return this
             .type(NotificationType.Comment)
-            .message("@" + byUser.username + " replied to your video")
+            .message("@" + byUser.username + " replied to your question")
             .additionalPayload({
                 commentId: comment._id.toString(),
-                postId: (<mongoose.Types.ObjectId>comment.post).toString()
+                postId: (<IPost>comment.post)._id.toString()
+            });
+    }
+
+    cakeComment(byUser: IUserModel, comment: ICommentModel) {
+        return this
+            .type(NotificationType.Comment)
+            .message("@" + byUser.username + " replied to your Cake")
+            .additionalPayload({
+                commentId: comment._id.toString(),
+                postId: (<IPost>comment.post)._id.toString()
+            });
+    }
+
+    postShare(byUser: IUserModel, post: IPost) {
+        return this
+            .type(NotificationType.Share)
+            .message("@" + byUser.username + " forwarded your question")
+            .additionalPayload({
+                postId: post._id.toString()
             });
     }
 
@@ -64,8 +83,17 @@ export class CustomNotificationSender extends NotificationSender {
             .message("@" + byUser.username + " mentioned you in a comment")
             .additionalPayload({
                 commentId: comment._id.toString(),
-                postId: (<mongoose.Types.ObjectId>comment.post).toString()
+                postId: (<IPost>comment.post)._id.toString()
             });
+    }
+
+    fromCms(title = "", message: string) {
+        this._sentFromCms = true;
+
+        return this
+            .type(NotificationType.General)
+            .title(title)
+            .message(message);
     }
 }
 
@@ -73,5 +101,6 @@ export enum NotificationType {
     General = 0,
     Follow = 1,
     Comment = 2,
-    Mention = 3
+    Mention = 3,
+    Share = 4
 }

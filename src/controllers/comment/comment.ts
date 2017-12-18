@@ -1,10 +1,10 @@
 import * as express from "express";
-import {AppError} from "../../models/app-error";
-import {Comment} from "../../models/comment";
-import {asyncMiddleware} from "../../server";
-import {IUserModel, populateFollowing} from "../../models/user";
-import {SystemConfiguration} from "../../models/system-vars";
-import {Post} from "../../models/post";
+import { AppError } from "../../models/app-error";
+import { Comment } from "../../models/comment";
+import { asyncMiddleware } from "../../server";
+import { IUserModel, populateFollowing } from "../../models/user";
+import { SystemConfiguration } from "../../models/system-vars";
+import { Post } from "../../models/post";
 
 const router = express.Router();
 

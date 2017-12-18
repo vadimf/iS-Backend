@@ -48,3 +48,10 @@ footer {
   font-size: 16pt;
   margin: 10px;
 }
+
+body.share {
+  padding: 12px;
+  margin: 0;
+
+  @import "share/share";
+}

@@ -1,9 +1,9 @@
 import * as express from "express";
-import {Pagination} from "../../models/pagination";
-import {foreignUsersArray, IUserModel, populateFollowing, User} from "../../models/user";
-import {FacebookAuthentication} from "../../utilities/facebook-authentication";
-import {asyncMiddleware} from "../../server";
-import {AppError} from "../../models/app-error";
+import { Pagination } from "../../models/pagination";
+import { foreignUsersArray, IUserModel, populateFollowing, User } from "../../models/user";
+import { FacebookAuthentication } from "../../utilities/facebook-authentication";
+import { asyncMiddleware } from "../../server";
+import { AppError } from "../../models/app-error";
 
 const router = express.Router();
 
@@ -111,7 +111,7 @@ router.get("/facebook", asyncMiddleware(async (req: express.Request, res: expres
             facebookUserIds.push(facebookFriend.id);
         }
 
-        userSuggestions = await User.find({facebookId: {$in: facebookUserIds}, username: { $nin: [ null, "" ] }, _id: {$ne: req.user._id}});
+        userSuggestions = await User.find({facebookId: {$in: facebookUserIds}});
         await populateFollowing(userSuggestions, req.user);
 
         if ( facebookUser.friends.paging ) {

@@ -1,11 +1,11 @@
 import * as express from "express";
-import {asyncMiddleware} from "../../server";
-import {FacebookAuthentication, IFacebookUser} from "../../utilities/facebook-authentication";
-import {AppError} from "../../models/app-error";
-import {IAuthTokenModel, IUserModel, IUserProfileModel, User} from "../../models/user";
-import {UploadProfilePicture} from "../user/upload-profile-picture";
-import {IUserPicture} from "../../models/picture";
-import {Utilities} from "../../utilities/utilities";
+import { asyncMiddleware } from "../../server";
+import { FacebookAuthentication, IFacebookUser } from "../../utilities/facebook-authentication";
+import { AppError } from "../../models/app-error";
+import { IAuthTokenModel, IUserModel, IUserProfileModel, User } from "../../models/user";
+import { UploadProfilePicture } from "../user/upload-profile-picture";
+import { IUserPicture } from "../../models/picture";
+import { Utilities } from "../../utilities/utilities";
 
 const router = express.Router();
 
@@ -69,6 +69,11 @@ router.post("/", asyncMiddleware(async (req: express.Request, res: express.Respo
     }
 
     let user = await User.findOne({facebookId: facebookUser.id});
+
+    if ( user && user.blocked ) {
+        throw AppError.UserBlocked;
+    }
+
     if ( ! user ) {
         user = await createUserByFacebookUser(facebookUser);
     }

@@ -54,9 +54,14 @@ export class AppError {
     static ObjectExist = new AppError(StatusCode.Conflict, 202, "Object already exist");
     /**
      * @apiDefine ErrorPerformingAction
-     * @apiError 100 The requested action could not be completed
+     * @apiError 300 The requested action could not be completed
      */
     static NotAuthenticated = new AppError(StatusCode.Unauthorized, 300, "Not authenticated/authorized");
+    /**
+     * @apiDefine UserBlocked
+     * @apiError 301 The requested action could not be completed
+     */
+    static UserBlocked = new AppError(StatusCode.Unauthorized, 301, "User blocked");
     /**
      * @apiDefine RequestValidation
      * @apiError 500 The requested couldn't be completed due to insufficient permissions, or lack of authentication
@@ -92,4 +97,6 @@ export class AppError {
      * @apiError 3002 There's been a problem authenticating with facebook
      */
     static FacebookAuthenticationError = new AppError(StatusCode.Unauthorized, 3002, "There's been a problem authenticating with facebook");
+
+    static CannotDeleteOwnUser = new AppError(StatusCode.Unauthorized, 100001, "Cannot remove yourself");
 }

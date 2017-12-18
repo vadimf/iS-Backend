@@ -1,11 +1,11 @@
 import * as express from "express";
-import {populateFollowing, User, UserReportReason} from "../../models/user";
-import {AppError} from "../../models/app-error";
-import {followUser, unfollowUser} from "./follow-user";
-import {asyncMiddleware} from "../../server";
-import {getFollowsByConditions} from "./user";
-import {getPostsListByConditions} from "../post/post";
-import {CustomNotificationSender} from "../../utilities/custom-notification-sender";
+import { populateFollowing, User, UserReportReason } from "../../models/user";
+import { AppError } from "../../models/app-error";
+import { followUser, unfollowUser } from "./follow-user";
+import { asyncMiddleware } from "../../server";
+import { getFollowsByConditions } from "./user";
+import { getPostsListByConditions } from "../post/post";
+import { CustomNotificationSender } from "../../utilities/custom-notification-sender";
 
 const router = express.Router({mergeParams: true});
 
@@ -16,7 +16,7 @@ const router = express.Router({mergeParams: true});
  * @param {string} username
  * @returns Promise<IUserModel>
  */
-async function getUserByUsername(username: string) {
+export async function getUserByUsername(username: string) {
     const user = await User.findOne({username: username});
 
     if ( ! user ) {

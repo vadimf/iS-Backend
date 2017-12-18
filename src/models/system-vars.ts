@@ -2,7 +2,8 @@ const StaticPages = {
     about               : "http://www.globalbit.co.il/",
     privacy             : "http://www.globalbit.co.il/",
     terms               : "http://www.globalbit.co.il/",
-    libraries           : "http://www.globalbit.co.il/"
+    libraries           : "http://www.globalbit.co.il/",
+    postShare           : process.env.API_URL + "share/:post"
 };
 
 const UsernameValidation = {

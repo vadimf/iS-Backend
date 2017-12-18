@@ -1,9 +1,9 @@
 import * as express from "express";
-import {asyncMiddleware} from "../../server";
-import {IAuthTokenModel, User} from "../../models/user";
-import {SystemConfiguration} from "../../models/system-vars";
-import {AppError} from "../../models/app-error";
-import {Utilities} from "../../utilities/utilities";
+import { asyncMiddleware } from "../../server";
+import { IAuthTokenModel, User } from "../../models/user";
+import { SystemConfiguration } from "../../models/system-vars";
+import { AppError } from "../../models/app-error";
+import { Utilities } from "../../utilities/utilities";
 
 const router = express.Router();
 
@@ -145,6 +145,10 @@ router.post("/signin", asyncMiddleware(async (req: express.Request, res: express
     const userByEmail = await User.findOne({email: email});
     if ( ! userByEmail ) {
         throw AppError.ObjectDoesNotExist;
+    }
+
+    if ( userByEmail.blocked ) {
+        throw AppError.UserBlocked;
     }
 
     if ( ! userByEmail.password || ! userByEmail.password.hash ) {

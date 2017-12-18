@@ -1,9 +1,9 @@
 import * as express from "express";
-import {Pagination} from "../../models/pagination";
-import {foreignUsersArray, populateFollowing, User} from "../../models/user";
-import {Post} from "../../models/post";
-import {Utilities} from "../../utilities/utilities";
-import {asyncMiddleware} from "../../server";
+import { Pagination } from "../../models/pagination";
+import { foreignUsersArray, populateFollowing, User } from "../../models/user";
+import { Post } from "../../models/post";
+import { Utilities } from "../../utilities/utilities";
+import { asyncMiddleware } from "../../server";
 
 const router = express.Router();
 

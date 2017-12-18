@@ -1,6 +1,6 @@
-import {IUserModel} from "../../models/user";
-import {AppError} from "../../models/app-error";
-import {Follower} from "../../models/follow";
+import { IUserModel } from "../../models/user";
+import { AppError } from "../../models/app-error";
+import { Follower } from "../../models/follow";
 
 /**
  * Update followed user "followed" counter, and following user "following" counter

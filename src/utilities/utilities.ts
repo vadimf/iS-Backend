@@ -15,4 +15,18 @@ export class Utilities {
 
         return new RegExp(pattern, flags);
     }
+
+    private static _currentDate: Date;
+    static currentDate(): Date {
+        if ( ! Utilities._currentDate ) {
+            Utilities._currentDate = new Date;
+        }
+
+        return Utilities._currentDate;
+    }
+
+    private static _emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    static emailValid(email: string): boolean {
+        return Utilities._emailRegex.test(email);
+    }
 }

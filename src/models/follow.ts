@@ -1,5 +1,5 @@
 import * as mongoose from "mongoose";
-import {IForeignUser, IUserModel, populateFollowing} from "./user";
+import { IForeignUser, IUserModel, populateFollowing } from "./user";
 
 export interface IFollowerModel extends mongoose.Document {
     following: IUserModel | mongoose.Types.ObjectId;

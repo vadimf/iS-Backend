@@ -1,6 +1,18 @@
-import {IUserModel} from "./user";
+import { IUserModel } from "./user";
 import * as mongoose from "mongoose";
 
+/*
+POST ENUMS
+ */
+export enum PostReportReason {
+    Spam = 1,
+    Inappropriate = 2,
+    DoNotLike = 3
+}
+
+/*
+INTERFACES
+ */
 export interface IPost extends mongoose.Document {
     creator: IUserModel;
     video: IVideo;
@@ -13,6 +25,10 @@ export interface IPost extends mongoose.Document {
     views: number;
     uniqueViews: number;
     comments: number;
+
+    currentUser?: IUserModel;
+    didBookmark: () => boolean;
+    didView: () => boolean;
 }
 
 export interface IVideo {
@@ -21,6 +37,14 @@ export interface IVideo {
     duration: number;
 }
 
+export interface IPostReport {
+    reason: PostReportReason;
+    creator: IUserModel|mongoose.Types.ObjectId;
+}
+
+/*
+SCHEMAS
+ */
 export const VideoSchema = new mongoose.Schema(
     {
         url: String,
@@ -28,11 +52,6 @@ export const VideoSchema = new mongoose.Schema(
         duration: Number
     }
 );
-
-export interface IPostReport {
-    reason: PostReportReason;
-    creator: IUserModel|mongoose.Types.ObjectId;
-}
 
 export const PostReportSchema = new mongoose.Schema(
     {
@@ -92,7 +111,10 @@ export const PostSchema = new mongoose.Schema(
         text: {
             type: String
         },
-        viewers: [PostViewSchema],
+        viewers: {
+            type: [PostViewSchema],
+            ref: "User"
+        },
         bookmarked: {
             type: [BookmarkerSchema],
             ref: "User"
@@ -112,6 +134,29 @@ export const PostSchema = new mongoose.Schema(
     }
 );
 
+PostSchema.methods.didBookmark = function(): boolean {
+    if ( ! this.currentUser ) {
+        return false;
+    }
+
+    const userId = this.currentUser._id;
+
+    return !!this.bookmarked.find((bookmark: mongoose.Types.ObjectId) => {
+        return bookmark.equals(userId);
+    });
+};
+
+PostSchema.methods.didView = function(): boolean {
+    if ( ! this.currentUser ) {
+        return false;
+    }
+
+    const userId = this.currentUser._id;
+
+    return !!this.viewers.find((bookmark: mongoose.Types.ObjectId) => {
+        return bookmark.equals(userId);
+    });
+};
 
 PostSchema.methods.toJSON = function() {
     return {
@@ -126,14 +171,10 @@ PostSchema.methods.toJSON = function() {
         views: this.viewers ? this.viewers.length : 0,
         uniqueViews: +this.uniqueViews,
         comments: +this.comments,
-        text: this.text
+        text: this.text,
+        bookmarked: this.didBookmark(),
+        viewed: this.didView()
     };
 };
 
 export const Post = mongoose.model<IPost>("Post", PostSchema, "posts");
-
-export enum PostReportReason {
-    Spam = 1,
-    Inappropriate = 2,
-    DontLike = 3
-}

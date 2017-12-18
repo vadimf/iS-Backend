@@ -1,9 +1,8 @@
-import * as admin from "firebase-admin";
-import {Bucket} from "../../node_modules/firebase-admin/node_modules/@types/google-cloud__storage/index";
-import {Utilities} from "./utilities";
+import { Utilities } from "./utilities";
 import * as FileType from "file-type";
 import * as Stream from "stream";
-import * as fs from "fs";
+import { firebaseClient } from "./firebase-client";
+import { Bucket } from "google-cloud__storage";
 
 export class StorageManager {
     private static _bucket: Bucket;
@@ -11,20 +10,7 @@ export class StorageManager {
     private _directory: string;
 
     private static _initializeBucket() {
-        const firebasePrivateCertificate = fs.readFileSync(__dirname + "/../../firebase.pem", "utf8");
-
-        const options = {
-            credential: admin.credential.cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                privateKey: firebasePrivateCertificate,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL
-            }),
-            databaseURL: process.env.FIREBASE_DATABASE_URL
-        };
-
-        admin.initializeApp(options);
-
-        StorageManager._bucket = admin.storage().bucket(StorageManager._getBucketName());
+        StorageManager._bucket = firebaseClient().storage().bucket(StorageManager._getBucketName());
     }
 
     static get bucket(): Bucket {
@@ -92,13 +78,12 @@ export class StorageManager {
 
             const fileName = that._fileName + "." + fileType.ext;
             const fullFileName = (this._directory ? this._directory + "/" : "") + fileName;
-            const bucketFile = StorageManager.bucket.file(fullFileName);
-            const stream = bucketFile
-                .createWriteStream({
-                    metadata: {
-                        contentType: fileType.mime
-                    }
-                });
+            const bucketFile = StorageManager.getBucketFile(fullFileName);
+
+            const stream = StorageManager.getWritableStream(
+                fullFileName,
+                fileType.mime
+            );
 
             stream
                 .on("error", () => {
@@ -116,6 +101,19 @@ export class StorageManager {
                 })
                 .end(buffer);
         });
+    }
+
+    static getBucketFile(fullFileName: string) {
+        return StorageManager.bucket.file(fullFileName);
+    }
+
+    static getWritableStream(fullFileName: string, mime: string) {
+        return StorageManager.getBucketFile(fullFileName)
+            .createWriteStream({
+                metadata: {
+                    contentType: mime
+                }
+            });
     }
 
     /**

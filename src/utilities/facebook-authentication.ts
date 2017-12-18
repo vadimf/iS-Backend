@@ -1,4 +1,4 @@
-import {isString} from "util";
+import { isString } from "util";
 
 const FacebookGraph = require("facebookgraph/lib");
 
@@ -14,7 +14,7 @@ export class FacebookAuthentication {
     public constructor(
         private _accessToken: string
     ) {
-        this._graph = new FacebookGraph(this._accessToken);
+        this._graph = new FacebookGraph(this.accessToken);
     }
 
     get accessToken(): string {
@@ -33,7 +33,6 @@ export class FacebookAuthentication {
     }
 
     async getUser(): Promise<IFacebookUser> {
-        console.log("me?fields=" + this._fields.join(","));
         return await this._graph.get("me?fields=" + this._fields.join(","));
     }
 }
@@ -58,7 +57,7 @@ export interface IFacebookUser {
             is_silhouette?: boolean,
             url?: string
         }
-    },
+    };
     friends?: {
         data: IFacebookUser[],
         paging?: FacebookPaging,

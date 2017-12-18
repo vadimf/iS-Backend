@@ -1,9 +1,9 @@
 import * as mongoose from "mongoose";
-import {IUserPicture, UserPictureSchema} from "./picture";
-import {IPhoneNumberModel, PhoneNumberSchema} from "./phone-number";
+import { IUserPicture, UserPictureSchema } from "./picture";
+import { IPhoneNumberModel, PhoneNumberSchema } from "./phone-number";
 import * as bcrypt from "bcrypt-nodejs";
-import {isBoolean} from "util";
-import {Follower, IFollowerModel} from "./follow";
+import { isBoolean } from "util";
+import { Follower, IFollowerModel } from "./follow";
 import * as _ from "underscore";
 
 export interface IUserProfileModel {
@@ -42,7 +42,6 @@ export const AuthTokenSchema = new mongoose.Schema(
     {
         authToken: {
             type: String,
-            unique: true,
             required: true
         },
         firebaseToken: {
@@ -64,7 +63,7 @@ export interface IPasswordModel extends mongoose.Document {
     setPassword: (newPassword: string) => Promise<any>;
 }
 
-const PasswordSchema = new mongoose.Schema({
+export const PasswordSchema = new mongoose.Schema({
     hash: {
         type: String
     },
@@ -155,9 +154,11 @@ export interface IUserModel extends mongoose.Document {
     password: IPasswordModel;
     isFollowing: boolean;
     reports: IUserReport[];
+    blocked?: boolean;
 
     toLoggedUser(): ILoggedUser;
     toForeignUser(): IForeignUser;
+    toAdministrators(): IUserToAdministrator;
 }
 
 export interface ILoggedUser {
@@ -177,6 +178,18 @@ export interface IForeignUser {
     following: Number;
     isFollowing: boolean;
     createdAt: Date;
+}
+
+export interface IUserToAdministrator {
+    username?: string;
+    email?: string;
+    facebookId?: string;
+    phone?: IPhoneNumberModel;
+    profile: IUserProfileModel;
+    followers: Number;
+    following: Number;
+    createdAt: Date;
+    blocked: boolean;
 }
 
 export const UserSchema = new mongoose.Schema(
@@ -199,9 +212,7 @@ export const UserSchema = new mongoose.Schema(
             sparse: true,
             index: true
         },
-        tokens: {
-            type: [AuthTokenSchema]
-        },
+        tokens: [AuthTokenSchema],
         profile: {
             type: ProfileSchema
         },
@@ -225,7 +236,11 @@ export const UserSchema = new mongoose.Schema(
                 hash: ""
             }
         },
-        reports: [UserReportSchema]
+        reports: [UserReportSchema],
+        blocked: {
+            type: Boolean,
+            "default": false
+        }
     },
     {
         timestamps: true
@@ -252,13 +267,35 @@ UserSchema.methods.toForeignUser = function(): IForeignUser {
         createdAt: this.createdAt
     };
 };
-
+UserSchema.methods.toAdministrators = function(): IUserToAdministrator {
+    return {
+        username: this.username ? this.username : "",
+        email: this.email || "",
+        phone: this.phone,
+        facebookId: this.facebookId,
+        profile: this.profile ? this.profile : null,
+        followers: +this.followers,
+        following: +this.following,
+        createdAt: this.createdAt,
+        blocked: !!this.blocked
+    };
+};
 
 export function foreignUsersArray(users: IUserModel[]): IForeignUser[] {
     const parsedUsers: IForeignUser[] = [];
 
     for ( const user of users ) {
         parsedUsers.push(user.toForeignUser());
+    }
+
+    return parsedUsers;
+}
+
+export function usersToAdministratorsArray(users: IUserModel[]): IUserToAdministrator[] {
+    const parsedUsers: IUserToAdministrator[] = [];
+
+    for ( const user of users ) {
+        parsedUsers.push(user.toAdministrators());
     }
 
     return parsedUsers;

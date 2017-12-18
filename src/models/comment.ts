@@ -1,6 +1,6 @@
-import {IUserModel} from "./user";
+import { IUserModel } from "./user";
 import * as mongoose from "mongoose";
-import {IPost} from "./post";
+import { IPost } from "./post";
 
 
 export interface ICommentModel extends mongoose.Document {

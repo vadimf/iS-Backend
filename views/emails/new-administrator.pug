@@ -1,0 +1,10 @@
+h1 You're added to #{brand}'s administration staff
+h2 Hi, #{admin.email}
+
+p This email was sent automatically by #{brand} because you were added to the administration staff.
+p To log into the administration control panel, #[a(href=link) click here] or copy the following link into the address bar of your browser:
+p(style='text-align: center') #{link}
+
+p
+    | Your email is: #{admin.email}<br />
+    | Your password is: #{password}

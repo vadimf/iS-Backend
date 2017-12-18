@@ -1,8 +1,7 @@
-import fs = require("fs");
-import {Utilities} from "../../utilities/utilities";
+import { Utilities } from "../../utilities/utilities";
 import sharp = require("sharp");
 import * as request from "request";
-import {StorageManager, MimeType} from "../../utilities/storage-manager";
+import { StorageManager, MimeType } from "../../utilities/storage-manager";
 
 export class UploadProfilePicture {
     private _buffer: Buffer;

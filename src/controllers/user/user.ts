@@ -1,11 +1,11 @@
 import * as express from "express";
-import {Pagination} from "../../models/pagination";
-import {updateUserDetails} from "./update-user";
-import {countByConditions, Follower, followersToForeignUsersArray} from "../../models/follow";
-import {default as ForeignUserRouter} from "./foreign-user-router";
-import {asyncMiddleware} from "../../server";
-import {getPostsListByConditions} from "../post/post";
-import {IForeignUser} from "../../models/user";
+import { Pagination } from "../../models/pagination";
+import { updateUserDetails } from "./update-user";
+import { countByConditions, Follower, followersToForeignUsersArray } from "../../models/follow";
+import {default as ForeignUserRouter } from "./foreign-user-router";
+import { asyncMiddleware } from "../../server";
+import { getPostsListByConditions } from "../post/post";
+import { IForeignUser } from "../../models/user";
 
 const router = express.Router();
 

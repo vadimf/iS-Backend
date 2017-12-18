@@ -7,7 +7,8 @@ import * as compression     from "compression";
 import * as path            from "path";
 import * as mongoose        from "mongoose";
 import * as helmet          from "helmet";
-import expressValidator =   require("express-validator");
+import * as bluebird        from "bluebird";
+import expressValidator     = require("express-validator");
 
 // import * as flash from "express-flash";
 // import * as mongo from "connect-mongo";
@@ -25,7 +26,7 @@ dotenv.config({ path: ".env" });
  * API keys and Passport configuration.
  */
 // import * as passportConfig from "./config/passport";
-import {AppError} from "./models/app-error";
+import { AppError } from "./models/app-error";
 
 /**
  * Create Express server.
@@ -42,7 +43,8 @@ const mongoDbUri = (process.env.MONGODB_URI || process.env.MONGOLAB_URI);
 mongoose.connect(
     mongoDbUri,
     {
-        useMongoClient: true
+        useMongoClient: true,
+        promiseLibrary: bluebird
     },
     (err: any) => {
         if ( err ) {
@@ -112,12 +114,12 @@ app.use(function(req, res, next) {
     res.error = function(e: any, meta?: any) {
         console.log(req.headers);
 
-        let contentType = req.headers["content-type"];
+        let contentType = req.headers["content-type"] as string;
         if ( ! contentType ) {
-            contentType = req.headers["Content-Type"];
+            contentType = req.headers["Content-Type"] as string;
 
             if ( ! contentType ) {
-                contentType = req.headers["ContentType"];
+                contentType = req.headers["ContentType"] as string;
             }
         }
 
@@ -190,18 +192,18 @@ export const asyncMiddleware = (fn: (req: any, res: any, next: any) => Promise<a
 
 
 // Controllers (route handlers)
-import {default as AuthRouter} from "./controllers/auth/auth";
-import {default as NotificationsRouter} from "./controllers/notifications/notifications";
-import {default as UserRouter} from "./controllers/user/user";
+import {default as AuthRouter } from "./controllers/auth/auth";
+import {default as NotificationsRouter } from "./controllers/notifications/notifications";
+import {default as UserRouter } from "./controllers/user/user";
 
-import {default as FeedRouter} from "./controllers/feed/feed";
-import {default as SearchRouter} from "./controllers/search/search";
-import {default as PostRouter} from "./controllers/post/post";
-import {default as CommentRouter} from "./controllers/comment/comment";
-import {default as DiscoverRouter} from "./controllers/discover/discover";
-import {default as SystemRouter} from "./controllers/system/system";
-import {isAuthenticated} from "./config/passport";
-import {isNullOrUndefined} from "util";
+import {default as FeedRouter } from "./controllers/feed/feed";
+import {default as SearchRouter } from "./controllers/search/search";
+import {default as PostRouter } from "./controllers/post/post";
+import {default as CommentRouter } from "./controllers/comment/comment";
+import {default as DiscoverRouter } from "./controllers/discover/discover";
+import {default as SystemRouter } from "./controllers/system/system";
+import { isAuthenticated } from "./config/passport";
+import { isNullOrUndefined } from "util";
 
 // Primary app routes.
 app.use("/v1/auth", AuthRouter);

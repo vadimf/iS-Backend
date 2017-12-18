@@ -1,9 +1,9 @@
 import * as express from "express";
-import {asyncMiddleware} from "../../server";
-import {IPasswordModel, IUserModel, User} from "../../models/user";
-import {AppError} from "../../models/app-error";
-import {Utilities} from "../../utilities/utilities";
-import {SystemConfiguration} from "../../models/system-vars";
+import { asyncMiddleware } from "../../server";
+import { IPasswordModel, IUserModel, User } from "../../models/user";
+import { AppError } from "../../models/app-error";
+import { Utilities } from "../../utilities/utilities";
+import { SystemConfiguration } from "../../models/system-vars";
 import * as nodemailer from "nodemailer";
 import * as pug from "pug";
 
@@ -14,6 +14,10 @@ async function getUserByToken(token: string) {
 
     if ( ! user ) {
         throw AppError.ObjectDoesNotExist;
+    }
+
+    if ( user.blocked ) {
+        throw AppError.UserBlocked;
     }
 
     return user;
@@ -61,12 +65,12 @@ router
             return;
         }
 
-        let contentType = req.headers["content-type"];
+        let contentType: string = req.headers["content-type"] as string;
         if ( ! contentType ) {
-            contentType = req.headers["Content-Type"];
+            contentType = req.headers["Content-Type"] as string;
 
             if ( ! contentType ) {
-                contentType = req.headers["ContentType"];
+                contentType = req.headers["ContentType"] as string;
             }
         }
         const jsonResponse = contentType && contentType.indexOf("application/json") >= 0;
@@ -119,6 +123,10 @@ router
         const user = await User.findOne({email: email});
         if ( ! user ) {
             throw AppError.ObjectDoesNotExist;
+        }
+
+        if ( user.blocked ) {
+            throw AppError.UserBlocked;
         }
 
         if ( ! user.password ) {
