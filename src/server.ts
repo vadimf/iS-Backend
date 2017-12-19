@@ -10,13 +10,6 @@ import * as helmet          from "helmet";
 import * as bluebird        from "bluebird";
 import expressValidator     = require("express-validator");
 
-// import * as flash from "express-flash";
-// import * as mongo from "connect-mongo";
-// import * as session from "express-session";
-// import * as errorHandler from "errorhandler";
-// import * as passport from "passport";
-// const MongoStore = mongo(session);
-
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
  */
@@ -25,7 +18,6 @@ dotenv.config({ path: ".env" });
 /**
  * API keys and Passport configuration.
  */
-// import * as passportConfig from "./config/passport";
 import { AppError } from "./models/app-error";
 
 /**
@@ -36,8 +28,6 @@ const app = express();
 /**
  * Connect to MongoDB.
  */
-// mongoose.Promise = global.Promise;
-
 const mongoDbUri = (process.env.MONGODB_URI || process.env.MONGOLAB_URI);
 
 mongoose.connect(
@@ -75,91 +65,79 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
 
     next();
 });
-app.use(expressValidator());
-// app.use(session({
-//   resave: true,
-//   saveUninitialized: true,
-//   secret: process.env.SESSION_SECRET,
-//   store: new MongoStore({
-//     url: process.env.MONGODB_URI || process.env.MONGOLAB_URI,
-//     autoReconnect: true
-//   })
-// }));
-// app.use(passport.initialize());
-// app.use(passport.session());
-// app.use(flash());
+app.use(expressValidator({
+    customValidators: {
+        inEnum: (input: string|number, options: any) => {
+            return input in options;
+        },
+        between: (input: number, options: {min: number, max: number}) => {
+            return input >= options.min && input <= options.max;
+        }
+    }
+}));
+
 app.use(lusca.xframe("SAMEORIGIN"));
 app.use(lusca.xssProtection(true));
 app.use((req, res, next) => {
-  res.locals.user = req.user;
-  next();
+    res.locals.user = req.user;
+    next();
 });
-// app.use((req, res, next) => {
-//   // After successful login, redirect back to the intended page
-//   if (!req.user &&
-//       req.path !== "/login" &&
-//       req.path !== "/signup" &&
-//       !req.path.match(/^\/auth/) &&
-//       !req.path.match(/\./)) {
-//     req.session.returnTo = req.path;
-//   } else if (req.user &&
-//       req.path == "/account") {
-//     req.session.returnTo = req.path;
-//   }
-//   next();
-// });
+
+app.use(function(req, res, next) {
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE");
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, X-Authorization");
+    next();
+});
 
 app.use(express.static(path.join(__dirname, "public"), { maxAge: 31557600000 }));
 app.use(function(req, res, next) {
     res.error = function(e: any, meta?: any) {
-        console.log(req.headers);
+        if ( req.method !== "OPTIONS" ) {
+            const contentType = req.header("content-type");
 
-        let contentType = req.headers["content-type"] as string;
-        if ( ! contentType ) {
-            contentType = req.headers["Content-Type"] as string;
+            const jsonResponse = contentType && contentType.indexOf("application/json") >= 0;
 
-            if ( ! contentType ) {
-                contentType = req.headers["ContentType"] as string;
+            let error: AppError;
+            let message: string = "";
+
+            if (e instanceof AppError) {
+                error = e;
+                message = e.errorDescription;
+
+                console.log("System error", e);
+            }
+            else {
+                error = AppError.ErrorPerformingAction;
+
+                message = e.message ? e.message : "General error";
+
+                if (!meta) {
+                    meta = e;
+
+                    console.log("System exception", e);
+                }
+            }
+
+            if (jsonResponse) {
+                return res.status(error.statusCode).json({
+                    errorCode: error.errorCode,
+                    errorDescription: error.errorDescription,
+                    meta: !isNullOrUndefined(meta) && !isNullOrUndefined(meta.message) ? {
+                        "exceptionMessage": meta.message
+                    } : meta
+                });
+            }
+            else {
+                return res.render("fatal", {
+                    brand: process.env.APP_NAME,
+                    title: "Error",
+                    message: message
+                });
             }
         }
-
-        const jsonResponse = contentType && contentType.indexOf("application/json") >= 0;
-
-        let error: AppError;
-        let message: string = "";
-
-        if ( e instanceof AppError ) {
-            error = e;
-            message = e.errorDescription;
-            console.log("System error", e);
-        }
         else {
-            error = AppError.ErrorPerformingAction;
-
-            message = e.message ? e.message : "General error";
-
-            if ( ! meta ) {
-                meta = e;
-
-                console.log("System exception", e);
-            }
-        }
-
-        if ( jsonResponse ) {
-            return res.status(error.statusCode).json({
-                errorCode: error.errorCode,
-                errorDescription: error.errorDescription,
-                meta: !isNullOrUndefined(meta) && !isNullOrUndefined(meta.message) ? {
-                    "exceptionMessage": meta.message
-                } : meta
-            });
-        }
-        else {
-            return res.render("fatal", {
-                brand: process.env.APP_NAME,
-                title: "Error",
-                message: message
-            });
+            this.response();
         }
     };
 
@@ -204,10 +182,13 @@ import {default as DiscoverRouter } from "./controllers/discover/discover";
 import {default as SystemRouter } from "./controllers/system/system";
 import { isAuthenticated } from "./config/passport";
 import { isNullOrUndefined } from "util";
+import {default as AdminRouter } from "./controllers/admin/admin";
 
 // Primary app routes.
 app.use("/v1/auth", AuthRouter);
 app.use("/v1/system", SystemRouter);
+
+app.use("/v1/admin", AdminRouter);
 
 // Protected requests
 app.use("/v1/user",                 isAuthenticated,        UserRouter);
@@ -225,14 +206,13 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     }
 });
 
-
 // Error Handler. Provides full stack - remove for production
 // app.use(errorHandler());
 
 // Start Express server.
 app.listen(app.get("port"), () => {
-  console.log(("  App is running at http://localhost:%d in %s mode"), app.get("port"), app.get("env"));
-  console.log("  Press CTRL-C to stop\n");
+    console.log(("  App is running at http://localhost:%d in %s mode"), app.get("port"), app.get("env"));
+    console.log("  Press CTRL-C to stop\n");
 });
 
 module.exports = app;
