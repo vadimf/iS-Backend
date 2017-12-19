@@ -64,8 +64,7 @@ router
 
         const administrator = new Administrator({email: email});
 
-        await sendNewAdministratorEmail(administrator, password);
-        await Promise.all([administrator.password.setPassword(password), administrator.save()]);
+        await Promise.all([sendNewAdministratorEmail(administrator, password), administrator.password.setPassword(password), administrator.save()]);
 
         res.response();
     }));
