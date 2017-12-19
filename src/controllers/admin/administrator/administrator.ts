@@ -226,8 +226,7 @@ router
 
         const newPassword = generatePassword();
 
-        await sendPasswordResetEmail(administrator, newPassword);
-        await Promise.all([administrator.password.setPassword(newPassword), administrator.save()]);
+        await Promise.all([sendPasswordResetEmail(administrator, newPassword), administrator.password.setPassword(newPassword), administrator.save()]);
 
         res.response();
     }));
