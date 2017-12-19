@@ -64,7 +64,7 @@ router
 
         const administrator = new Administrator({email: email});
 
-        console.log(await sendNewAdministratorEmail(administrator, password));
+        await sendNewAdministratorEmail(administrator, password);
         await Promise.all([administrator.password.setPassword(password), administrator.save()]);
 
         res.response();
@@ -112,7 +112,6 @@ function sendEmail(mailOptions: {from?: string, to: string, subject: string, htm
     return new Promise((resolve, reject) => {
         transporter.sendMail(mailOptions, (error?: Error, info?: nodemailer.SentMessageInfo) => {
             if (error) {
-                console.log("Email error", error);
                 reject(error);
                 return;
             }
