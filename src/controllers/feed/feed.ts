@@ -6,6 +6,10 @@ import { populateFollowing } from "../../models/user";
 
 const router = express.Router();
 
+function feedConditions(): any {
+    return {};
+}
+
 /**
  * @api {get} /feed?page=1 Get posts feed
  * @apiName Get
@@ -45,9 +49,9 @@ const router = express.Router();
  */
 router.get("/", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const page: number = req.query.page;
-    const total = await Post.count({});
+    const total = await Post.count(feedConditions());
     const pagination = new Pagination(page, total);
-    const posts = await Post.find({})
+    const posts = await Post.find(feedConditions())
         .sort("-createdAt")
         .limit(pagination.resultsPerPage)
         .skip(pagination.offset)

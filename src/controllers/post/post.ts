@@ -598,7 +598,7 @@ async function sendCommentMentionsNotification(toUsers: IUserModel[], byUser: IU
  * @returns {any}
  */
 function getUsernameMentionsByText(text: string) {
-    const mentionsRegex = new RegExp("@([a-zA-Z0-9\_\.]+)", "gim");
+    const mentionsRegex = new RegExp("@([a-z0-9_.]+\\b)", "mg");
 
     let matches = text.match(mentionsRegex);
     if (matches && matches.length) {
@@ -623,7 +623,7 @@ function hasUserBookmarkedPost(user: IUserModel, post: any) {
         return false;
     }
 
-    return post.bookmarked.some((bookmark: any) => {
+    return post.didBookmark() || post.bookmarked.some((bookmark: any) => {
         return bookmark._id.equals(user._id);
     });
 }

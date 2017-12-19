@@ -51,29 +51,10 @@ export class CustomNotificationSender extends NotificationSender {
     comment(byUser: IUserModel, comment: ICommentModel) {
         return this
             .type(NotificationType.Comment)
-            .message("@" + byUser.username + " replied to your question")
+            .message("@" + byUser.username + " replied to your video")
             .additionalPayload({
                 commentId: comment._id.toString(),
                 postId: (<IPost>comment.post)._id.toString()
-            });
-    }
-
-    cakeComment(byUser: IUserModel, comment: ICommentModel) {
-        return this
-            .type(NotificationType.Comment)
-            .message("@" + byUser.username + " replied to your Cake")
-            .additionalPayload({
-                commentId: comment._id.toString(),
-                postId: (<IPost>comment.post)._id.toString()
-            });
-    }
-
-    postShare(byUser: IUserModel, post: IPost) {
-        return this
-            .type(NotificationType.Share)
-            .message("@" + byUser.username + " forwarded your question")
-            .additionalPayload({
-                postId: post._id.toString()
             });
     }
 
