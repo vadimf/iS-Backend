@@ -244,14 +244,36 @@ router.post("/contacts", asyncMiddleware(async (req: express.Request, res: expre
         };
     }
 
+    const page: number = +req.query.page;
+    let searchConditions = {};
+
+    if ( phoneNumberConditions && emailConditions ) {
+        searchConditions = phoneNumberConditions.concat(emailConditions);
+    }
+    else if ( emailConditions ) {
+        searchConditions = emailConditions;
+    }
+    else if ( phoneNumberConditions ) {
+        searchConditions = phoneNumberConditions;
+    }
+    else {
+        const pagination = new Pagination(page, 0);
+
+        res.response({
+            users: [],
+            pagination: pagination
+        });
+
+        return;
+    }
+
     const conditions = {
         _id: {$ne: req.user._id},
         blocked: {$ne: true},
-        $or: phoneNumberConditions.concat(emailConditions)
+        $or: searchConditions
     };
 
     const total = await User.count(conditions);
-    const page: number = +req.query.page;
     const pagination = new Pagination(page, total);
 
     const users = await User
