@@ -9,6 +9,28 @@ export class Utilities {
         return text;
     }
 
+    static randomStringArguments(length: number = 64, includeLowercase: boolean = true, includeUppercase: boolean = true, includeDashes: boolean = false, includeSpecialCharacters: boolean = false): string {
+        var allowedCharacters = "0123456789";
+
+        if ( includeLowercase ) {
+            allowedCharacters += "abcdefghijklmnopqrstuvwxyz";
+        }
+
+        if ( includeUppercase ) {
+            allowedCharacters += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        }
+
+        if ( includeDashes ) {
+            allowedCharacters += "-_";
+        }
+
+        if ( includeSpecialCharacters ) {
+            allowedCharacters += "!@#$%^&*()+=";
+        }
+
+        return Utilities.randomString(length, allowedCharacters);
+    }
+
     static stringToRegExp(str: string): RegExp {
         const flags = str.replace(/.*\/([gimy]*)$/, "$1");
         const pattern = str.replace(new RegExp("^/(.*?)/" + flags + "$"), "$1");

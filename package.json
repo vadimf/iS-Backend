@@ -81,6 +81,7 @@
     "request-promise": "^4.2.2",
     "sharp": "^0.18.4",
     "stream-buffers": "^3.0.1",
+    "time-ago": "^0.2.1",
     "twilio": "^3.11.0",
     "typed-promisify": "^0.4.0",
     "underscore": "^1.8.3",

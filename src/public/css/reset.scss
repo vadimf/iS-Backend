@@ -1,0 +1,73 @@
+.reset {
+  text-align: center;
+
+  .title {
+    font-size: 18px;
+    font-weight: 400;
+    color: #3e4c69;
+    margin: 0;
+  }
+
+  .instructions {
+    margin: 40px 0 0;
+    font-size: 14px;
+    font-weight: 300;
+    color: #3e4c69;
+  }
+
+  .form {
+    margin: 0;
+
+    .form-group {
+      margin: 30px 0;
+
+      &.has-error {
+        margin-bottom: -18px;
+      }
+
+      label {
+        display: block;
+        color: #8fa4b7;
+        font-size: 16px;
+        text-transform: capitalize;
+        margin-bottom: 10px;
+      }
+
+      .form-control {
+        width: 260px;
+        padding: 12px 20px;
+        border-radius: 40px;
+        border: 1px solid #dadde0;
+        box-shadow: inset 2px 2px 6px rgba(0,0,0,.1);
+      }
+
+      .help-block {
+        font-size: 14px;
+        color: #FC4755;
+        margin: 0;
+      }
+
+      &.submit-form {
+        margin-top: 40px;
+
+        .btn-submit {
+          background-color: transparent;
+          color: #64baff;
+          font-size: 16px;
+          border: 2px solid #64baff;
+          border-radius: 40px;
+          padding: 8px 15px;
+          width: 200px;
+          text-align: center;
+          cursor: pointer;
+
+          &:disabled {
+            border-color: #dadde0;
+            color: #dadde0;
+            cursor: none;
+          }
+        }
+      }
+    }
+  }
+}

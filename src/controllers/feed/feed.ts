@@ -1,13 +1,90 @@
 import * as express from "express";
-import { Post } from "../../models/post";
+import { IPost, Post } from "../../models/post";
+import { IUserModel, User } from "../../models/user";
 import { asyncMiddleware } from "../../server";
 import { Pagination } from "../../models/pagination";
 import { populateFollowing } from "../../models/user";
 
 const router = express.Router();
 
-function feedConditions(): any {
-    return {};
+async function feedQuery(conditions?: any, additionalAggregations?: any) {
+    if ( ! conditions ) {
+        conditions = {};
+    }
+
+    conditions = Object.assign(conditions, {
+        "creator.blocked": {$ne: true},
+        "parent": null,
+    });
+
+    let aggregations = [
+        {
+            $lookup: {
+                from: "users",
+                localField: "creator",
+                foreignField: "_id",
+                as: "creator"
+            }
+        },
+        {
+            $unwind: "$creator"
+        },
+        {
+            $lookup: {
+                from: "follows",
+                localField: "creator._id",
+                foreignField: "following",
+                as: "creator.followersUsers"
+            }
+        },
+        {
+            $match: conditions
+        }
+    ];
+
+    if ( additionalAggregations ) {
+        aggregations = aggregations.concat(additionalAggregations);
+    }
+
+    console.log(aggregations);
+
+    return await Post.aggregate(aggregations);
+}
+
+async function countFeedPosts(conditions?: any) {
+    const results = await feedQuery(conditions, [
+        {
+            $count: "total"
+        }
+    ]);
+
+    return results && results[0] ? (<{total: number}>results[0]).total : 0;
+}
+
+async function getFeedPosts(pagination: Pagination, conditions?: any, sorting?: any) {
+    if ( ! sorting ) {
+        sorting = {
+            createdAt: -1
+        };
+    }
+
+    return await feedQuery(conditions, [
+        {
+            $sort: sorting
+        },
+        {
+            $limit: pagination.resultsPerPage
+        },
+        {
+            $skip: pagination.offset
+        }
+    ]);
+}
+
+async function reformatPostFromObject(post: any, currentUser: IUserModel) {
+    post.creator = new User(post.creator);
+    post.currentUser = currentUser;
+    return new Post(post);
 }
 
 /**
@@ -47,15 +124,58 @@ function feedConditions(): any {
  * @apiSuccess {int}                pagination.resultsPerPage Displaying results per page
  * @apiSuccess {int}                pagination.offset Start offset
  */
-router.get("/", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+router.get("/following", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const feedQueryConditions: any = {
+        "creator.blocked": {$ne: true},
+        "parent": null,
+        $or: [
+            {
+                "creator._id": req.user._id,
+            },
+            {
+                "creator.followersUsers.follower": req.user._id
+            }
+        ]
+    };
+
+    await getPostsByConditions(feedQueryConditions, req, res);
+}));
+
+router.get("/popular", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    const feedQueryConditions: any = {
+        $or: [
+            {
+                "creator._id": req.user._id,
+            },
+            {
+                "creator.followersUsers.follower": req.user._id
+            }
+        ]
+    };
+
+    await getPostsByConditions(
+        feedQueryConditions,
+        req,
+        res,
+        {
+            createdAt: -1,
+            comments: -1,
+            uniqueViews: -1
+        },
+    );
+}));
+
+export async function getPostsByConditions(conditions: any, req: express.Request, res: express.Response, sorting?: any) {
     const page: number = req.query.page;
-    const total = await Post.count(feedConditions());
+    const total = await countFeedPosts(conditions);
     const pagination = new Pagination(page, total);
-    const posts = await Post.find(feedConditions())
-        .sort("-createdAt")
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset)
-        .populate("creator");
+
+    const postsTmp: any[] = await getFeedPosts(pagination, conditions, sorting);
+
+    const posts: IPost[] = [];
+    for ( const post of postsTmp ) {
+        posts.push(await reformatPostFromObject(post, req.user));
+    }
 
     await populateFollowing(posts, req.user, "creator");
 
@@ -63,6 +183,6 @@ router.get("/", asyncMiddleware(async (req: express.Request, res: express.Respon
         posts: posts,
         pagination: pagination
     });
-}));
+}
 
 export default router;

@@ -258,11 +258,11 @@ router.get("/followers", asyncMiddleware(async (req: express.Request, res: expre
 router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.Response) => {    const username: string = req.params.username;
     const user = await User.findOne({username: username});
 
-    if ( ! user ) {
+    if ( ! user || user.blocked ) {
         throw AppError.ObjectDoesNotExist;
     }
 
-    await getPostsListByConditions({creator: user._id}, req, res);
+    await getPostsListByConditions({creator: user._id, parent: null}, req, res);
 }));
 
 export default router;

@@ -5,7 +5,9 @@ import { countByConditions, Follower, followersToForeignUsersArray } from "../..
 import {default as ForeignUserRouter } from "./foreign-user-router";
 import { asyncMiddleware } from "../../server";
 import { getPostsListByConditions } from "../post/post";
-import { IForeignUser } from "../../models/user";
+import { User, IForeignUser } from "../../models/user";
+import { Utilities } from "../../utilities/utilities";
+import { SystemConfiguration } from "../../models/system-vars";
 
 const router = express.Router();
 
@@ -232,7 +234,38 @@ router.get("/followers", asyncMiddleware(async (req: express.Request, res: expre
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.Response) => {
-    await getPostsListByConditions({creator: req.user._id}, req, res);
+    await getPostsListByConditions({creator: req.user._id, parent: null}, req, res);
+}));
+
+
+router.get("/username-exists", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+    req.checkQuery({
+        "username": {
+            matches: {
+                options: Utilities.stringToRegExp("/" + SystemConfiguration.validations.username.regex + "/"),
+                errorMessage: "Username doesn't match regex"
+            },
+            isLength: {
+                options: [{
+                    min: SystemConfiguration.validations.username.minLength,
+                    max: SystemConfiguration.validations.username.maxLength
+                }],
+                errorMessage: "Username length is invalid"
+            }
+        }
+    });
+
+    if ( req.requestInvalid() ) {
+        return;
+    }
+
+    const username: String = ("" + req.query.username).toLowerCase();
+
+    const usernameExists = await User.count({username: username});
+
+    res.response({
+        exists: usernameExists > 0
+    });
 }));
 
 

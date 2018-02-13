@@ -1,6 +1,5 @@
 import { NotificationSender } from "./notification-sender";
 import { IUserModel } from "../models/user";
-import { ICommentModel } from "../models/comment";
 import { IPost } from "../models/post";
 
 export class CustomNotificationSender extends NotificationSender {
@@ -48,23 +47,23 @@ export class CustomNotificationSender extends NotificationSender {
             });
     }
 
-    comment(byUser: IUserModel, comment: ICommentModel) {
+    comment(byUser: IUserModel, comment: IPost) {
         return this
             .type(NotificationType.Comment)
             .message("@" + byUser.username + " replied to your video")
             .additionalPayload({
                 commentId: comment._id.toString(),
-                postId: (<IPost>comment.post)._id.toString()
+                postId: (<IPost>comment).parent.toString()
             });
     }
 
-    mention(byUser: IUserModel, comment: ICommentModel) {
+    mention(byUser: IUserModel, comment: IPost) {
         return this
             .type(NotificationType.Mention)
             .message("@" + byUser.username + " mentioned you in a comment")
             .additionalPayload({
                 commentId: comment._id.toString(),
-                postId: (<IPost>comment.post)._id.toString()
+                postId: (<IPost>comment).parent.toString()
             });
     }
 

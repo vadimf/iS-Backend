@@ -1,5 +1,6 @@
 import * as express from "express";
 import { SystemConfiguration } from "../../models/system-vars";
+import { Administrator } from "../../models/admin/administrator";
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const router = express.Router();
  *
  * @apiSuccess {SystemVars}     vars System variables object
  */
-router.get("/", (req: express.Request, res: express.Response) => {
+router.get("/", async (req: express.Request, res: express.Response) => {
     res.response({
         vars: SystemConfiguration.toJson()
     });

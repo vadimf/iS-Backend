@@ -1,0 +1,17 @@
+.success {
+  h1 {
+    text-align: center;
+    color: $color__emphasis;
+    font-size: 18px;
+    font-weight: 400;
+  }
+}
+
+.error {
+  h1 {
+    text-align: center;
+    color: #FC4755;
+    font-size: 18px;
+    font-weight: 400;
+  }
+}

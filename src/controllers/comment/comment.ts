@@ -1,6 +1,5 @@
 import * as express from "express";
 import { AppError } from "../../models/app-error";
-import { Comment } from "../../models/comment";
 import { asyncMiddleware } from "../../server";
 import { IUserModel, populateFollowing } from "../../models/user";
 import { SystemConfiguration } from "../../models/system-vars";
@@ -15,17 +14,17 @@ const router = express.Router();
  * @returns {Promise<number>}
  */
 export async function countPostComments(postId: string) {
-    return await Comment.count({post: postId});
+    return await Post.count({parent: postId});
 }
 
 /**
  * Get a comment object by it's ID
  *
  * @param {string} commentId
- * @returns {Promise<ICommentModel>}
+ * @returns {Promise<Post>}
  */
 async function getCommentById(commentId: string) {
-    const comment = await Comment.findOne({_id: commentId}).populate("creator");
+    const comment = await Post.findOne({_id: commentId, parent: {$ne: null}}).populate("creator");
 
     if ( ! comment ) {
         throw AppError.ObjectDoesNotExist;
@@ -39,10 +38,10 @@ async function getCommentById(commentId: string) {
  *
  * @param {string} commentId
  * @param user
- * @returns {Promise<ICommentModel>}
+ * @returns {Promise<Post>}
  */
 async function getCommentByIdOwnedByUser(commentId: string, user: IUserModel) {
-    const comment = await Comment.findOne({_id: commentId}).populate("creator");
+    const comment = await Post.findOne({_id: commentId, parent: {$ne: null}}).populate("creator");
     const creatorId = (<IUserModel>comment.creator)._id;
 
     if ( ! creatorId.equals(user._id) ) {
@@ -151,7 +150,7 @@ router.patch("/:comment", asyncMiddleware(async (req: express.Request, res: expr
 router.delete("/:comment", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const commentId: string = req.params.comment;
     const comment = await getCommentByIdOwnedByUser(commentId, req.user);
-    const postId = comment.post;
+    const postId = comment.parent;
 
     res.response();
 

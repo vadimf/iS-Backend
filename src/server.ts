@@ -96,7 +96,9 @@ app.use(function(req, res, next) {
         if ( req.method !== "OPTIONS" ) {
             const contentType = req.header("content-type");
 
-            const jsonResponse = contentType && contentType.indexOf("application/json") >= 0;
+            console.log("Content type", contentType);
+
+            const jsonResponse = contentType && ( contentType.indexOf("application/json") >= 0 || contentType.indexOf("multipart/form-data") >= 0 );
 
             let error: AppError;
             let message: string = "";
@@ -182,11 +184,15 @@ import {default as DiscoverRouter } from "./controllers/discover/discover";
 import {default as SystemRouter } from "./controllers/system/system";
 import { isAuthenticated } from "./config/passport";
 import { isNullOrUndefined } from "util";
+import {default as ShareRouter } from "./controllers/share/share";
 import {default as AdminRouter } from "./controllers/admin/admin";
+import {default as LegalRouter } from "./controllers/legal/legal";
 
 // Primary app routes.
+app.use("/legal", LegalRouter);
 app.use("/v1/auth", AuthRouter);
 app.use("/v1/system", SystemRouter);
+app.use("/v1/share", ShareRouter);
 
 app.use("/v1/admin", AdminRouter);
 

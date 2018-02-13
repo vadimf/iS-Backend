@@ -40,8 +40,8 @@ const PasswordValidation = {
 };
 
 const CommentTextValidation = {
-    minLength           : 1,
-    maxLength           : 999
+    minLength           : 0,
+    maxLength           : 255
 };
 
 export class SystemConfiguration {

@@ -3,7 +3,6 @@ import { IPost, IVideo, Post, PostReportReason } from "../../models/post";
 import { SystemConfiguration } from "../../models/system-vars";
 import { AppError } from "../../models/app-error";
 import { IUserModel, populateFollowing, User } from "../../models/user";
-import { Comment, ICommentModel } from "../../models/comment";
 import { asyncMiddleware } from "../../server";
 import { Pagination } from "../../models/pagination";
 import { countPostComments } from "../comment/comment";
@@ -12,6 +11,9 @@ import { CustomNotificationSender } from "../../utilities/custom-notification-se
 import * as multer from "multer";
 import { MimeType, StorageManager } from "../../utilities/storage-manager";
 import { Utilities } from "../../utilities/utilities";
+import { Administrator } from "../../models/admin/administrator";
+import * as nodemailer from "nodemailer";
+import * as pug from "pug";
 // const getDuration = require("get-video-duration");
 // const gifify = require("gifify");
 
@@ -28,21 +30,27 @@ const router = express.Router();
  * Get a post by it's ID
  *
  * @param {string} id
+ * @param filterBlockedUsers
  * @returns Promise<IPost>
  */
-async function getPostById(id: string) {
+export async function getPostById(id: string, filterBlockedUsers: boolean = true) {
     let post;
 
     try {
         post = await Post
             .findOne({_id: id})
-            .populate("creator");
+            .populate("creator")
+            .populate("reports.creator");
     }
     catch (e) {
         throw AppError.ObjectDoesNotExist;
     }
 
     if ( ! post ) {
+        throw AppError.ObjectDoesNotExist;
+    }
+
+    if ( post.creator.blocked && filterBlockedUsers ) {
         throw AppError.ObjectDoesNotExist;
     }
 
@@ -177,24 +185,38 @@ router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail"
     }
 
     const text: string = req.body.text as string;
-    const duration: number = req.body.duration as number;
-    const videoFilesArray: IUploadedFile[] = (<any>req.files)["video"];
-    const thumbnailFilesArray: IUploadedFile[] = (<any>req.files)["thumbnail"];
-    const videoFile = videoFilesArray.length > 0 ? videoFilesArray[0] as IUploadedFile : null;
-    const thumbnailFile = thumbnailFilesArray.length > 0 ? thumbnailFilesArray[0] : null;
-
-    if ( ! videoFile || ! thumbnailFile ) {
-        res.error(AppError.UploadingError, "No file given");
-        return;
-    }
 
     const post = new Post();
     post.text = text;
     post.creator = req.user;
 
+    post.video = await uploadVideo(req);
+
+    await post.save();
+
+    res.response({post: post});
+}));
+
+export async function uploadVideo(req: express.Request): Promise<IVideo> {
+    const videoFilesArray: IUploadedFile[] = (<any>req.files)["video"];
+    const thumbnailFilesArray: IUploadedFile[] = (<any>req.files)["thumbnail"];
+    const videoFile = videoFilesArray.length > 0 ? videoFilesArray[0] as IUploadedFile : null;
+    const thumbnailFile = thumbnailFilesArray.length > 0 ? thumbnailFilesArray[0] : null;
+    const duration: number = req.body.duration as number;
+
     req.setTimeout(0, null);
 
-    const fileName = req.user._id.toString() + "/" + Utilities.randomString(24);
+    if ( ! videoFile || ! thumbnailFile ) {
+        throw AppError.UploadingError;
+    }
+
+    const fileName = req.user._id.toString() + "/" + Utilities.randomStringArguments(
+        24,
+        true,
+        false,
+        true,
+        false
+    );
 
     const fileStorageManager = new StorageManager();
 
@@ -222,16 +244,12 @@ router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail"
 
     const filesUploadingResults = await Promise.all([videoUploadingPromise, thumbnailUploadingPromise]);
 
-    post.video = {
+    return {
         url: filesUploadingResults[0].url,
         thumbnail: filesUploadingResults[1].url,
         duration: duration
     } as IVideo;
-
-    await post.save();
-
-    res.response({post: post});
-}));
+}
 
 export async function getPostsListByConditions(conditions: any, req: express.Request, res: express.Response) {
     const page: number = req.query.page;
@@ -289,7 +307,7 @@ export async function getPostsListByConditions(conditions: any, req: express.Req
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/bookmarked", asyncMiddleware(async (req: express.Request, res: express.Response) => {
-    await getPostsListByConditions({"bookmarked._id": req.user._id}, req, res);
+    await getPostsListByConditions({"bookmarked._id": req.user._id, parent: null}, req, res);
 }));
 
 router
@@ -457,10 +475,10 @@ router.get("/:post/comments", asyncMiddleware(async (req: express.Request, res: 
     const postId: string = req.params.post;
     const post = await getPostById(postId);
     const page: number = req.query.page;
-    const total: number = await Comment.count({post: post._id});
+    const total: number = await Post.count({parent: post._id});
     const pagination = new Pagination(page, total);
-    const comments = await Comment
-        .find({post: post._id})
+    const comments = await Post
+        .find({parent: post._id})
         .sort("-createdAt")
         .limit(pagination.resultsPerPage)
         .skip(pagination.offset)
@@ -515,7 +533,7 @@ router.post("/:post/view", asyncMiddleware(async (req: express.Request, res: exp
  * @apiSuccess {String}             comment.creator.createdAt Date registered
  * @apiSuccess {String}         comment.text Comment text
  */
-router.post("/:post/comment", asyncMiddleware(async (req: express.Request, res: express.Response) => {
+router.post("/:post/comment", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail", maxCount: 1}]), asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const postId: string = req.params.post;
     const post = await getPostById(postId);
 
@@ -537,10 +555,11 @@ router.post("/:post/comment", asyncMiddleware(async (req: express.Request, res: 
 
     const text: string = req.body.text;
 
-    const comment = new Comment();
-    comment.post = post;
+    const comment = new Post();
+    comment.parent = post;
     comment.creator = req.user;
     comment.text = text;
+    comment.video = await uploadVideo(req);
 
     res.response({comment: comment});
 
@@ -570,10 +589,10 @@ router.post("/:post/comment", asyncMiddleware(async (req: express.Request, res: 
  *
  * @param {IUserModel} toUser
  * @param {IUserModel} byUser
- * @param {ICommentModel} comment
+ * @param {Post} comment
  * @returns {Promise<any>}
  */
-async function sendNewCommentNotification(toUser: IUserModel, byUser: IUserModel, comment: ICommentModel) {
+async function sendNewCommentNotification(toUser: IUserModel, byUser: IUserModel, comment: IPost) {
     return await (new CustomNotificationSender(toUser))
         .comment(byUser, comment)
         .send();
@@ -587,7 +606,7 @@ async function sendNewCommentNotification(toUser: IUserModel, byUser: IUserModel
  * @param {ICommentModel} comment
  * @returns {Promise<any>}
  */
-async function sendCommentMentionsNotification(toUsers: IUserModel[], byUser: IUserModel, comment: ICommentModel) {
+async function sendCommentMentionsNotification(toUsers: IUserModel[], byUser: IUserModel, comment: IPost) {
     return await (new CustomNotificationSender(toUsers))
         .mention(byUser, comment)
         .send();
@@ -712,12 +731,59 @@ router.post("/:post/report", asyncMiddleware(async (req: express.Request, res: e
         reason: reason
     });
 
-    res.response();
+    await Promise.all([
+        post.save(),
+        sendReportEmail(post, req.user)
+    ]);
 
-    post.save()
-        .then(() => {})
-        .catch(() => {});
+    res.response();
 }));
 
+async function sendReportEmail(post: IPost, user: IUserModel) {
+    const path = __dirname + "/../../../views/emails/post-report.pug";
+    const renderedView = pug.renderFile(path, {
+        brand: process.env.APP_NAME,
+        user: user,
+        link: process.env.ADMIN_URL + "reports/" + post._id.toString()
+    });
+
+    const transporterOptions = {
+        host: process.env.EMAIL_HOST,
+        port: +process.env.EMAIL_PORT,
+        secure: process.env.EMAIL_SECURE === "true",
+        auth: {
+            user: process.env.EMAIL_AUTH_USER,
+            pass: process.env.EMAIL_AUTH_PASSWORD
+        }
+    };
+
+    const transporter = nodemailer.createTransport(transporterOptions);
+
+    const administrators = await Administrator.find();
+
+    const emails: Array<string> = [];
+
+    for ( const admin of administrators ) {
+        emails.push(admin.email);
+    }
+
+    const mailOptions = {
+        from: process.env.APP_NAME + " <" + process.env.EMAIL_FROM + ">",
+        to: emails.join(", "),
+        subject: "(" + process.env.APP_NAME + ") New post report",
+        html: renderedView
+    };
+
+    return new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, (error?: Error, info?: nodemailer.SentMessageInfo) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+
+            resolve(info);
+        });
+    });
+}
 
 export default router;

@@ -1,132 +1,125 @@
-doctype html
-html
-    head
-        meta(charset='utf-8')
-        meta(http-equiv='X-UA-Compatible', content='IE=edge')
-        meta(name='viewport', content='width=device-width, initial-scale=1.0')
-        meta(name='theme-color' content='#4DA5F4')
-        meta(name='csrf-token', content=_csrf)
-        title #{title}
-        link(rel='shortcut icon', href='/images/favicon.png')
-        link(rel='stylesheet', href='/css/main.css')
+- var bodyClass="reset";
+include ../partials/header
 
-    body
-        include ../partials/header
+.reset
+    h1.title
+        | Hello
+        if user.username
+            | , #{user.username}
+        else if user.profile.firstName
+            | , #{user.profile.firstName}
+        else if user.email
+            | , #{user.email}
 
-        .container
-            include ../partials/flash
-                .col-sm-8.col-sm-offset-2
-                    form(method="POST", action="/v1/auth/forgot-password/reset/?token=" + token)
-                        legend Reset password
-                        input(type='hidden', name='_csrf', value=_csrf)
-                        input(type='hidden', name='_method', value="PATCH")
-                        .form-group
-                            p Hello
-                                if user.username
-                                    | , #{user.username}
-                                else if user.profile.firstName
-                                    | , #{user.profile.firstName}
-                                else if user.email
-                                    | , #{user.email}
+    h2.instructions="Please enter your new password"
 
-                            p Please enter your new password
-                            label.control-label(for='password') New password
-                            input.form-control(type='password', name='password', id='password', placeholder='Password', autofocus)
-                            p.help-block
-                        .form-group
-                            label.control-label(for='password-confirm') Confirm new password
-                            input.form-control(type='password', name='password-confirm', id='password-confirm', placeholder='Confirm password')
-                            p.help-block
-                        .form-group.text-center
-                            button.btn.btn-primary(type='submit')
-                                i.fa.fa-key
-                                | Reset Password
+    .form
+        form(method="POST", action="/v1/auth/forgot-password/reset/?token=" + token)
+            input(type='hidden', name='_method', value="PATCH")
 
-        include ../partials/footer
+            .form-group
+                label(for='password') New password
+                input.form-control(type='password', name='password', id='password', placeholder='Password', autofocus)
+                p.help-block
 
-        script(src='/js/lib/jquery-3.1.1.min.js')
-        script(src='/js/lib/bootstrap.min.js')
-        script(src='/js/main.js')
-        script(type="text/javascript").
-            $(function() {
-                var validations = !{JSON.stringify(validations).replace(/<\//g, "<\\/")}
+            .form-group
+                label(for='password-confirm') Confirm new password
+                input.form-control(type='password', name='password-confirm', id='password-confirm', placeholder='Confirm password')
+                p.help-block
 
-                console.log(validations);
+            .form-group.submit-form
+                button.btn-submit(type='submit', disabled)="Reset Password"
 
-                $("input[type='password']").on("change", function () {
-                    validatePasswords();
-                });
+include ../partials/footer
 
-                $("form").on("submit", function (e) {
-                    var validationSuccess = validateLengths();
+script(type="text/javascript").
+    $(function() {
+        var validations = !{JSON.stringify(validations).replace(/<\//g, "<\\/")}
 
-                    if ( validationSuccess ) {
-                        validationSuccess = validatePasswords();
-                    }
+        const submitButton = $("button.btn-submit");
 
-                    if ( ! validationSuccess ) {
-                        e.preventDefault();
-                    }
-                });
+        $("input[type='password']").on("change, keyup", function () {
+            if ( ! validateLengths() || ! validatePasswords() ) {
+                submitButton.prop("disabled", true);
+            }
+            else {
+                submitButton.prop("disabled", false);
+            }
+        });
 
-                function validateLengths() {
-                    const passwordField = $("input[name='password']");
-                    const passwordHelp = passwordField.siblings(".help-block");
-                    const passwordParent = passwordField.parent();
-                    const passwordConfirmField = $("input[name='password-confirm']");
+        $("form").on("submit", function (e) {
+            var validationSuccess = validateLengths();
 
-                    const password = passwordField.val();
-                    const passwordConfirm = passwordConfirmField.val();
+            if ( validationSuccess ) {
+                validationSuccess = validatePasswords();
+            }
 
-                    if ( ! password || ! passwordConfirm ) {
-                        return false;
-                    }
+            if ( ! validationSuccess ) {
+                e.preventDefault();
+            }
+        });
 
-                    if ( password.length < validations.password.minLength ) {
-                        passwordParent.addClass("has-error");
-                        passwordHelp.text("Password is too short");
+        function validateLengths() {
+            const passwordField = $("input[name='password']");
+            const passwordHelp = passwordField.siblings(".help-block");
+            const passwordParent = passwordField.parent();
+            const passwordConfirmField = $("input[name='password-confirm']");
 
-                        return false;
-                    }
-                    else if (password.length > validations.password.maxLength) {
-                        passwordParent.addClass("has-error");
-                        passwordHelp.text("Password is too long");
+            const password = passwordField.val();
+            const passwordConfirm = passwordConfirmField.val();
 
-                        return false;
-                    }
-                    else {
-                        passwordParent.removeClass("has-error");
-                        passwordHelp.text("");
+            if ( ! password || ! passwordConfirm ) {
+                return false;
+            }
 
-                        return true;
-                    }
-                }
+            console.log("Is too short", password.length < validations.password.minLength);
+            console.log("Is too long", password.length > validations.password.maxLength);
 
-                function validatePasswords() {
-                    const passwordField = $("input[name='password']");
+            if ( password.length < validations.password.minLength ) {
+                passwordParent.addClass("has-error");
+                passwordHelp.text("Password is too short");
 
-                    const passwordConfirmField = $("input[name='password-confirm']");
-                    const passwordConfirmHelp = passwordConfirmField.siblings(".help-block");
-                    const passwordConfirmParent = passwordConfirmField.parent();
+                return false;
+            }
+            else if (password.length > validations.password.maxLength) {
+                passwordParent.addClass("has-error");
+                passwordHelp.text("Password is too long");
 
-                    const password = passwordField.val();
-                    const passwordConfirm = passwordConfirmField.val();
+                return false;
+            }
+            else {
+                passwordParent.removeClass("has-error");
+                passwordHelp.text("");
 
-                    if ( ! password || ! passwordConfirm ) {
-                        return false;
-                    }
+                return true;
+            }
+        }
 
-                    if ( password !== passwordConfirm ) {
-                        passwordConfirmParent.addClass("has-error");
-                        passwordConfirmHelp.text("Password doesn't match");
+        function validatePasswords() {
+            const passwordField = $("input[name='password']");
 
-                        return false;
-                    }
-                    else {
-                        passwordConfirmParent.removeClass("has-error");
-                        passwordConfirmHelp.text("");
+            const passwordConfirmField = $("input[name='password-confirm']");
+            const passwordConfirmHelp = passwordConfirmField.siblings(".help-block");
+            const passwordConfirmParent = passwordConfirmField.parent();
 
-                        return true;
-                    }
-                }
-            })
+            const password = passwordField.val();
+            const passwordConfirm = passwordConfirmField.val();
+
+            if ( ! password || ! passwordConfirm ) {
+                return false;
+            }
+
+            if ( password !== passwordConfirm ) {
+                passwordConfirmParent.addClass("has-error");
+                passwordConfirmHelp.text("Password doesn't match");
+
+                return false;
+            }
+            else {
+                passwordConfirmParent.removeClass("has-error");
+                passwordConfirmHelp.text("");
+
+                return true;
+            }
+        }
+    })

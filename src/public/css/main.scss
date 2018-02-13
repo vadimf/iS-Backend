@@ -1,12 +1,12 @@
-@import "themes/default/variables";
+//@import "lib/bootstrap/bootstrap";
+//@import "lib/font-awesome/font-awesome";
+@import url('https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,900');
+@import url('https://fonts.googleapis.com/css?family=Open+Sans:700');
 
-@import "lib/bootstrap/bootstrap";
-@import "lib/font-awesome/font-awesome";
+$color__general: #222730;
+$color__emphasis: #64baff;
 
-@import "themes/default/default";
-
-// Scaffolding
-// -------------------------
+$break_small: 721px;
 
 html {
   position: relative;
@@ -14,44 +14,97 @@ html {
 }
 
 body {
-  padding-top: 60px;
-  margin-bottom: 75px;
-}
+  font-family: 'Montserrat', sans-serif;
+  margin: 0;
+  padding: 50px 16px 30px;
+  color: $color__general;
+  font-weight: 300;
 
-footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 45px;
-  line-height: 45px;
-
-  p, ul {
-    margin-bottom: 0;
+  @media screen and (max-width: $break_small) {
+    padding: 16px 0 20px 0;
   }
 }
 
-// Alerts
-// -------------------------
+img {
+  vertical-align: middle;
+}
 
-.alert {
+.logo {
+  text-align: center;
+
+  .icon {
+    img {
+      width: 62px;
+      height: auto;
+
+      @media screen and (max-width: $break_small) {
+        width: 54px;
+      }
+    }
+  }
+  .brand {
+    padding: 11px 0;
+
+    @media screen and (max-width: $break_small) {
+      padding: 0;
+    }
+
+    img {
+      width: 110px;
+      height: auto;
+
+      @media screen and (max-width: $break_small) {
+        width: 78px;
+      }
+    }
+  }
+}
+
+
+.download {
+  margin-top: 40px;
+  text-align: center;
+
+  h2.download-text {
+    margin: 0 0 20px;
+    font-size: 24px;
+    font-weight: 300;
+
+    .app-name {
+      color: $color__emphasis;
+      font-weight: 500;
+    }
+  }
+
+  img.android {
+    width: 135px;
+    height: auto;
+    border: 0;
+  }
+}
+
+.about-text {
   margin-top: 20px;
+  font-size: 14px;
+  text-align: center;
 }
 
-// Font Icons
-// -------------------------
+.copyright {
+  margin-top: 50px;
+  font-size: 13px;
+  text-align: center;
 
-.fa {
-  margin-right: 6px;
+  a {
+    text-decoration: none;
+    color: $color__general;
+  }
+
+  img {
+    width: 69px;
+    height: auto;
+  }
 }
 
-.logo-text {
-  font-size: 16pt;
-  margin: 10px;
-}
-
-body.share {
-  padding: 12px;
-  margin: 0;
-
-  @import "share/share";
-}
+@import "share";
+@import "reset";
+@import "messages";

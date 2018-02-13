@@ -1,0 +1,15 @@
+- var bodyClass="share";
+include  ../partials/header
+
+block content
+    No content
+
+.download
+    h2.download-text Download <span class="app-name">#{process.env.APP_NAME}</span> to answer
+
+    a(href='https://play.google.com/store/apps/details?id=' + process.env.ANDROID_PACKAGE_NAME + '&hl=en', target='_block')
+        img.android(src='/images/google-play.svg')
+
+.about-text If you don’t ASK, you will never know!
+
+include ../partials/footer

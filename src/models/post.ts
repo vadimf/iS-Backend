@@ -17,6 +17,7 @@ export interface IPost extends mongoose.Document {
     creator: IUserModel;
     video: IVideo;
     text?: string;
+    parent?: IPost | mongoose.Types.ObjectId;
 
     viewers: mongoose.Types.Array<IUserModel>;
     bookmarked: mongoose.Types.Array<IUserModel>;
@@ -29,6 +30,8 @@ export interface IPost extends mongoose.Document {
     currentUser?: IUserModel;
     didBookmark: () => boolean;
     didView: () => boolean;
+
+    toAdministrators(): any;
 }
 
 export interface IVideo {
@@ -64,6 +67,10 @@ export const PostReportSchema = new mongoose.Schema(
             required: true,
             ref: "User",
             index: true
+        },
+        completed: {
+            type: Boolean,
+            "default": false
         }
     },
     {
@@ -127,7 +134,11 @@ export const PostSchema = new mongoose.Schema(
             type: Number,
             "default": 0
         },
-        reports: [PostReportSchema]
+        reports: [PostReportSchema],
+        parent: {
+            type: mongoose.SchemaTypes.ObjectId,
+            ref: "Post"
+        }
     },
     {
         timestamps: true
@@ -163,17 +174,49 @@ PostSchema.methods.toJSON = function() {
         id: this._id,
         createdAt: this.createdAt,
         creator: this.creator ? this.creator.toForeignUser() : null,
-        video: {
-            url: this.video.url,
-            thumbnail: this.video.thumbnail,
-            duration: this.video.duration
-        },
+        video: this.video,
         views: this.viewers ? this.viewers.length : 0,
         uniqueViews: +this.uniqueViews,
         comments: +this.comments,
         text: this.text,
         bookmarked: this.didBookmark(),
         viewed: this.didView()
+    };
+};
+
+PostSchema.methods.toAdministrators = function() {
+    const res = this.toJSON();
+
+    const formattedReports: Array<any> = [];
+
+    for ( const report of this.reports ) {
+        formattedReports.push({
+            creator: report.creator.toForeignUser(),
+            createdAt: report.createdAt,
+            reason: report.reason
+        });
+    }
+
+    res.reports = formattedReports;
+
+    return res;
+};
+
+export function postsToAdministrators(posts: IPost[]) {
+    const formatted: Array<any> = [];
+
+    for ( const post of posts ) {
+        formatted.push(post.toAdministrators());
+    }
+
+    return formatted;
+}
+
+VideoSchema.methods.toJSON = function() {
+    return {
+        url: this.url,
+        thumbnail: this.thumbnail,
+        duration: this.duration
     };
 };
 

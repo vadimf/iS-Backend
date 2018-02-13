@@ -1,7 +1,7 @@
 import * as express from "express";
 import { asyncMiddleware } from "../../../server";
 import { Pagination } from "../../../models/pagination";
-import { User, usersToAdministratorsArray } from "../../../models/user";
+import {IUserModel, User, usersToAdministratorsArray} from "../../../models/user";
 import { getUserByUsername } from "../../user/foreign-user-router";
 import { Utilities } from "../../../utilities/utilities";
 
@@ -152,16 +152,22 @@ router
         });
     }));
 
+export async function blockUser(user: IUserModel): Promise<boolean> {
+    user.blocked = true;
+    user.tokens = [];
+
+    await user.save();
+
+    return true;
+}
+
 router
     .route("/:username/block")
     .post(asyncMiddleware(async (req: express.Request, res: express.Response) => {
         const username: string = req.params.username;
         const user = await getUserByUsername(username);
 
-        user.blocked = true;
-        user.tokens = [];
-
-        await user.save();
+        await blockUser(user);
 
         res.response();
     }))

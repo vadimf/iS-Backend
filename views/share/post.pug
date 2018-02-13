@@ -1,0 +1,14 @@
+extends wrapper
+
+block content
+    .post-container
+        .video
+            video(controls=true)
+                source(src=post.video.url, type="video/mp4")
+
+        .sharing-user
+            | #{user.username} shared with you
+
+        .date-created=ta.ago(post.createdAt)
+
+        .creator=post.creator.username
