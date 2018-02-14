@@ -1,14 +1,24 @@
 extends wrapper
 
 block content
+    h1.intro
+        span.username @#{user.username}
+        |
+        | shared a video from #{brand} with you:
+
     .post-container
-        .video
+        .post
             video(controls=true)
                 source(src=post.video.url, type="video/mp4")
+            .creator
+                .thumbnail
+                    img(src=post.creator.profile && post.creator.profile.picture && post.creator.profile.picture.thumbnail ? post.creator.profile.picture.thumbnail : "/images/user-placeholder.svg")
+                .username=post.creator.username
 
-        .sharing-user
-            | #{user.username} shared with you
-
-        .date-created=ta.ago(post.createdAt)
-
-        .creator=post.creator.username
+    script(src='/js/lib/plyr/plyr.min.js')
+    script.
+        plyr.setup('video', {
+            controls: [
+                'play', 'progress', 'current-time', 'fullscreen'
+            ]
+        });

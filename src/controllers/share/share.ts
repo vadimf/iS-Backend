@@ -5,6 +5,7 @@ import { SystemConfiguration } from "../../models/system-vars";
 import { IUserModel, User } from "../../models/user";
 import { getPostById } from "../post/post";
 import { IPost } from "../../models/post";
+import {isNullOrUndefined} from "util";
 
 const router = express.Router();
 
@@ -44,9 +45,14 @@ router.get("/:username/:post", asyncMiddleware(async (req: express.Request, res:
         User.findOne({username: sharingUsername})
     ];
 
-    const promisesResponse = await Promise.all(promises);
+    let promisesResponse;
 
-    if ( ! promisesResponse[0] || ! promisesResponse[1] ) {
+    try {
+        promisesResponse = await Promise.all(promises);
+    }
+    catch (e) {}
+
+    if ( ! promisesResponse || isNullOrUndefined(promisesResponse[0]) || isNullOrUndefined(promisesResponse[1]) ) {
         res.render(
             "share/not-found",
             {

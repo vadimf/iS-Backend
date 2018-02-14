@@ -1,5 +1,5 @@
 body.share {
-  background-color: #fafafa;
+  background-color: #FFFFFF;
 
   h1.intro {
     text-align: center;
@@ -23,178 +23,43 @@ body.share {
   }
 
   .post-container {
-    box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-
     margin: 30px auto 0;
     width: 100%;
     max-width: 380px;
-    background-color: #ffffff;
-    box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
-    padding: 16px 16px 23px;
+    position: relative;
 
     @media screen and (max-width: $break_small) {
-      margin-top: 20px;
-      box-shadow: none;
-      max-width: 380px;
-      width: 100%;
+
     }
 
-    .user-details {
-      .profile-picture {
-        width: 30px;
-        height: 30px;
-        border-radius: 100%;
-        margin-right: 10px;
-      }
-
-      .username {
-        font-size: 16px;
-      }
-    }
-
-    h2.question-title {
-      margin: 10px 0 0;
-      padding: 0;
-      font-size: 16px;
-      font-weight: 300;
-    }
-
-    .question-image {
-      margin: 10px -16px -23px;
-
-      img {
+    .post {
+      video {
         width: 100%;
+        height: auto;
       }
-    }
 
-    .images-poll {
-      margin: 16px -8px 0;
+      .creator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: rgba(0,0,0,.3);
+        padding: 8px;
 
-      ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-
-        li {
-          margin: 7px 8px;
-          width: calc(50% - 16px);
-          float: left;
-
-          img.image-option {
-            width: 100%;
-          }
-
-          .image-caption {
-            position: relative;
-            background-color: rgba(255, 255, 255, 0.7);
-            font-size: 16px;
-            margin-top: -35px;
-            padding: 6px 8px;
-            text-align: center;
-          }
-        }
-
-        &::after {
-          content: '';
-          display: block;
-          clear: both;
-        }
-      }
-    }
-
-    .text-poll {
-      margin: 24px -16px 0;
-      border-bottom: 4px solid #f9f9f9;
-
-      ul {
-        list-style: none;
-        margin: 0 0;
-        padding: 0;
-
-        li {
-          border-top: 4px solid #f9f9f9;
-          background-color: #FFF;
-          padding: 15px 30px;
-          font-size: 16px;
-
-          .text-option {
-            &:before {
-              display: block;
-              border: 1px solid #8fa4b7;
-              border-radius: 100%;
-              width: 20px;
-              height: 20px;
-              content: '';
-              float: left;
-              margin: -2px 30px 0 0;
-            }
-          }
-
-          &:after {
-            content: '';
-            display: block;
-            clear: both;
-          }
-        }
-      }
-    }
-
-    .resolved {
-      padding: 14px 0 9px;
-
-      color: #ff949a;
-      font-weight: 600;
-      font-size: 14px;
-
-      .icon {
-        display: inline-block;
-        img {
-          width: 30px;
-          margin-top: -5px;
-          margin-right: 10px;
-        }
-      }
-    }
-
-    .resolved-question {
-      margin: 0 -16px;
-      padding: 10px 16px;
-      background-color: #f9f9f9;
-
-      .question {
-        .question-label {
-          font-family: "Open Sans", sans-serif;;
-          font-weight: bold;
-          font-size: 16px;
-          margin-right: 6px;
-          width: 17px;
-          text-align: center;
+        .thumbnail {
           display: inline-block;
+
+          img {
+            width: 45px;
+            height: auto;
+            border-radius: 100%;
+          }
         }
-
-        .question-text {
-
-        }
-      }
-
-      .date {
-        color: #8fa4b7;
-        font-size: 12px;
-        margin-left: 23px;
-      }
-    }
-
-    .resolution {
-      .text {
-        margin: 10px 0;
-      }
-
-      .image {
-        margin: 0 -16px -23px;
-        img {
-          width: 100%;
+        .username {
+          color: #FFF;
+          display: inline-block;
+          font-size: 11pt;
+          padding: 0 8px;
         }
       }
     }
@@ -217,4 +82,7 @@ body.share {
     }
   }
 
+  .plyr input[type="range"] {
+    -webkit-appearance: none
+  }
 }

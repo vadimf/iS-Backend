@@ -4,7 +4,7 @@
 @import url('https://fonts.googleapis.com/css?family=Open+Sans:700');
 
 $color__general: #222730;
-$color__emphasis: #64baff;
+$color__emphasis: #f04b43;
 
 $break_small: 721px;
 
@@ -108,3 +108,4 @@ img {
 @import "share";
 @import "reset";
 @import "messages";
+@import "lib/plyr/plyr";
