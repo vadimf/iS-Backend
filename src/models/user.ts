@@ -5,6 +5,7 @@ import * as bcrypt from "bcrypt-nodejs";
 import { isBoolean } from "util";
 import { Follower, IFollowerModel } from "./follow";
 import * as _ from "underscore";
+import * as dateformat from "dateformat";
 
 export interface IUserProfileModel {
     firstName: string;
@@ -22,16 +23,27 @@ export const ProfileSchema = new mongoose.Schema(
             type: UserPictureSchema
         },
         bio: String,
-        website: String
+        website: String,
+        birthday: Date
     },
-    {
-        toJSON: {
-            transform: function (doc: any, ret: any) {
-                delete ret._id;
-            }
-        }
-    }
+    // {
+    //     toJSON: {
+    //         transform: function (doc: any, ret: any) {
+    //             delete ret._id;
+    //         }
+    //     }
+    // }
 );
+ProfileSchema.methods.toJSON = function() {
+    return {
+        firstName: this.firstName,
+        lastName: this.lastName,
+        picture: this.picture,
+        bio: this.bio,
+        website: this.website,
+        birthday: this.birthday ? dateformat(this.birthday, "yyyy-mm-dd") : ""
+    };
+};
 
 export interface IAuthTokenModel {
     authToken: string;

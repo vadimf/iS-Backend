@@ -28,6 +28,7 @@ export async function updateUserDetails(req: express.Request) {
             await updateLastName(req);
             await updateWebsite(req);
             await updateBio(req);
+            await updateBirthday(req);
         }
     }
 }
@@ -116,6 +117,23 @@ function updateLastName(req: express.Request) {
         }
 
         req.user.profile.lastName = req.body.user.profile.lastName;
+    }
+}
+
+
+function updateBirthday(req: express.Request) {
+    if ( ! isNullOrUndefined(req.body.user.profile.birthday) ) {
+        if ( ! isNullOrUndefined(req.body.user.profile.birthday) ) {
+            req.checkBody({
+                "user[profile][birthday]": {
+                    isISO8601: {
+                        errorMessage: "Birthday isn't in yyyy-mm-dd format"
+                    }
+                }
+            });
+        }
+
+        req.user.profile.birthday = new Date(req.body.user.profile.birthday);
     }
 }
 
