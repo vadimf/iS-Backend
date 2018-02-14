@@ -97,7 +97,7 @@ function updateFirstName(req: express.Request) {
  */
 function updateLastName(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.lastName) ) {
-        if ( req.body.user.profile.lastName ) {
+        if ( ! isNullOrUndefined(req.body.user.profile.lastName) ) {
             req.checkBody({
                 "user[profile][lastName]": {
                     matches: {
