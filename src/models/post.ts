@@ -18,6 +18,7 @@ export interface IPost extends mongoose.Document {
     video: IVideo;
     text?: string;
     parent?: IPost | mongoose.Types.ObjectId;
+    tags?: String[];
 
     viewers: mongoose.Types.Array<IUserModel>;
     bookmarked: mongoose.Types.Array<IUserModel>;
@@ -138,7 +139,11 @@ export const PostSchema = new mongoose.Schema(
         parent: {
             type: mongoose.SchemaTypes.ObjectId,
             ref: "Post"
-        }
+        },
+        tags: {
+            type: [String],
+            index: true
+        },
     },
     {
         timestamps: true

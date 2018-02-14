@@ -189,6 +189,7 @@ router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail"
     const post = new Post();
     post.text = text;
     post.creator = req.user;
+    post.tags = getTagsByText(text);
 
     post.video = await uploadVideo(req);
 
@@ -559,6 +560,7 @@ router.post("/:post/comment", upload.fields([{name: "video", maxCount: 1}, {name
     comment.parent = post;
     comment.creator = req.user;
     comment.text = text;
+    comment.tags = getTagsByText(text);
     comment.video = await uploadVideo(req);
 
     res.response({comment: comment});
@@ -618,6 +620,24 @@ async function sendCommentMentionsNotification(toUsers: IUserModel[], byUser: IU
  */
 function getUsernameMentionsByText(text: string) {
     const mentionsRegex = new RegExp("@([a-z0-9_.]+\\b)", "mg");
+
+    let matches = text.match(mentionsRegex);
+    if (matches && matches.length) {
+        matches = matches.map(function(match) {
+            return match.slice(1);
+        });
+        return _.uniq(matches);
+    } else {
+        return [];
+    }
+}
+
+/**
+ * @param {string} text
+ * @returns {any}
+ */
+function getTagsByText(text: string) {
+    const mentionsRegex = new RegExp("#([a-z0-9_.]+\\b)", "mg");
 
     let matches = text.match(mentionsRegex);
     if (matches && matches.length) {
