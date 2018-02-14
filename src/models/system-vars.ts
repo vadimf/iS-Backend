@@ -19,7 +19,7 @@ const FirstNameValidation = {
 };
 
 const LastNameValidation = {
-    minLength           : 2,
+    minLength           : 0,
     maxLength           : 16,
     regex               : "/\\b[^\\d\\W]+\\b/"
 };
