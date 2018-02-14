@@ -1,8 +1,10 @@
+const legalPagesLinkPrefix = process.env.BASE_URL + "legal/";
+
 const StaticPages = {
-    about               : "http://www.globalbit.co.il/",
-    privacy             : "http://www.globalbit.co.il/",
-    terms               : "http://www.globalbit.co.il/",
-    libraries           : "http://www.globalbit.co.il/",
+    about               : legalPagesLinkPrefix + "about",
+    privacy             : legalPagesLinkPrefix + "privacy",
+    terms               : legalPagesLinkPrefix + "terms",
+    libraries           : "http://globalbit.co.il/legal/libs/",
     postShare           : process.env.API_URL + "share/:post"
 };
 
