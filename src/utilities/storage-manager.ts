@@ -86,9 +86,10 @@ export class StorageManager {
             );
 
             stream
-                .on("error", () => {
+                .on("error", (e) => {
                     return reject({
-                        uploadingError: "Unable to upload to firebase storage"
+                        uploadingError: "Unable to upload to firebase storage",
+                        error: e
                     });
                 })
                 .on("finish", async () => {
