@@ -189,7 +189,10 @@ router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail"
     const post = new Post();
     post.text = text;
     post.creator = req.user;
-    post.tags = getTagsByText(text);
+
+    if ( text ) {
+        post.tags = getTagsByText(text);
+    }
 
     post.video = await uploadVideo(req);
 
@@ -221,7 +224,16 @@ export async function uploadVideo(req: express.Request): Promise<IVideo> {
 
     const fileStorageManager = new StorageManager();
 
-    const videoUploadingPromise = fileStorageManager
+    const thumbnailUploadingPromise = await fileStorageManager
+        .fileName(fileName + ".thumb")
+        .fromBuffer(
+            thumbnailFile.buffer,
+            {
+                allowedMimeTypes: [MimeType.IMAGE_JPEG, MimeType.IMAGE_GIF, MimeType.IMAGE_PNG]
+            }
+        );
+
+    const videoUploadingPromise = await fileStorageManager
         .fileName(fileName)
         .fromBuffer(
             videoFile.buffer,
@@ -234,20 +246,11 @@ export async function uploadVideo(req: express.Request): Promise<IVideo> {
             }
         );
 
-    const thumbnailUploadingPromise = fileStorageManager
-        .fileName(fileName + ".thumb")
-        .fromBuffer(
-            thumbnailFile.buffer,
-            {
-                allowedMimeTypes: [MimeType.IMAGE_JPEG, MimeType.IMAGE_GIF, MimeType.IMAGE_PNG]
-            }
-        );
-
-    const filesUploadingResults = await Promise.all([videoUploadingPromise, thumbnailUploadingPromise]);
+    // const filesUploadingResults = await Promise.all([thumbnailUploadingPromise, videoUploadingPromise]);
 
     return {
-        url: filesUploadingResults[0].url,
-        thumbnail: filesUploadingResults[1].url,
+        url: videoUploadingPromise.url,
+        thumbnail: thumbnailUploadingPromise.url,
         duration: duration
     } as IVideo;
 }
@@ -560,7 +563,10 @@ router.post("/:post/comment", upload.fields([{name: "video", maxCount: 1}, {name
     comment.parent = post;
     comment.creator = req.user;
     comment.text = text;
-    comment.tags = getTagsByText(text);
+    if ( text ) {
+        comment.tags = getTagsByText(text);
+    }
+
     comment.video = await uploadVideo(req);
 
     res.response({comment: comment});
@@ -571,17 +577,22 @@ router.post("/:post/comment", upload.fields([{name: "video", maxCount: 1}, {name
             post.comments = await countPostComments(post._id.toString());
             await post.save();
 
-            const mentionedUsernames = getUsernameMentionsByText(text);
+            if ( text ) {
+                const mentionedUsernames = getUsernameMentionsByText(text);
 
-            if ( mentionedUsernames.length ) {
-                const mentionedUsers = await User.find({username: {$in: mentionedUsernames}, _id: { $ne: post.creator._id}});
+                if (mentionedUsernames.length) {
+                    const mentionedUsers = await User.find({
+                        username: {$in: mentionedUsernames},
+                        _id: {$ne: post.creator._id}
+                    });
 
-                if ( mentionedUsers.length ) {
-                    await sendCommentMentionsNotification(mentionedUsers, req.user, comment);
+                    if (mentionedUsers.length) {
+                        await sendCommentMentionsNotification(mentionedUsers, req.user, comment);
+                    }
                 }
-            }
 
-            await sendNewCommentNotification(post.creator, req.user, comment);
+                await sendNewCommentNotification(post.creator, req.user, comment);
+            }
         })
         .catch(() => {});
 }));

@@ -66,13 +66,13 @@ export class StorageManager {
 
             if ( ! fileType ) {
                 return reject({
-                    uploadingError: "Unable to retrieve mime-type from file"
+                    uploadingError: "Unable to retrieve mime-type from file (expected: " + options.allowedMimeTypes.join(", ") + ")"
                 });
             }
 
             if ( options.allowedMimeTypes && ! (options.allowedMimeTypes.indexOf(fileType.mime.toString()) > -1) ) {
                 return reject({
-                    uploadingError: "Extension '" + fileType.ext + "' isn't allowed"
+                    uploadingError: "File type '" + fileType.mime.toString() + "' isn't allowed. (Allowed types" + options.allowedMimeTypes.join(", ") + ")"
                 });
             }
 

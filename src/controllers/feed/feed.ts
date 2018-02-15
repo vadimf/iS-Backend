@@ -46,8 +46,6 @@ async function feedQuery(conditions?: any, additionalAggregations?: any) {
         aggregations = aggregations.concat(additionalAggregations);
     }
 
-    console.log(aggregations);
-
     return await Post.aggregate(aggregations);
 }
 
@@ -142,19 +140,8 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
 }));
 
 router.get("/popular", asyncMiddleware(async (req: express.Request, res: express.Response) => {
-    const feedQueryConditions: any = {
-        $or: [
-            {
-                "creator._id": req.user._id,
-            },
-            {
-                "creator.followersUsers.follower": req.user._id
-            }
-        ]
-    };
-
     await getPostsByConditions(
-        feedQueryConditions,
+        {},
         req,
         res,
         {
