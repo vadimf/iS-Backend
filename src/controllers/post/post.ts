@@ -81,9 +81,9 @@ function hasUserViewedPost(user: IUserModel, post: IPost) {
 }
 
 function addViewToPost(post: IPost, user: IUserModel) {
-    if ( post.creator._id.equals(user._id) ) {
-        return;
-    }
+    // if ( post.creator._id.equals(user._id) ) {
+    //     return;
+    // }
 
     if ( ! hasUserViewedPost(user, post) ) {
         post.uniqueViews++;
