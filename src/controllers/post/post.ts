@@ -263,7 +263,9 @@ export async function getPostsListByConditions(conditions: any, req: express.Req
     const posts = await Post
         .find(conditions)
         .sort("-createdAt")
-        .populate("creator");
+        .populate("creator")
+        .limit(pagination.resultsPerPage)
+        .skip(pagination.offset);
 
     await populateFollowing(posts, req.user, "creator");
 
