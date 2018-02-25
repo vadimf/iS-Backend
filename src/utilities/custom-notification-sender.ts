@@ -53,7 +53,7 @@ export class CustomNotificationSender extends NotificationSender {
             .message("@" + byUser.username + " replied to your video")
             .additionalPayload({
                 commentId: comment._id.toString(),
-                postId: (<IPost>comment).parent.toString()
+                postId: (<IPost>comment.parent)._id.toString()
             });
     }
 
@@ -63,7 +63,7 @@ export class CustomNotificationSender extends NotificationSender {
             .message("@" + byUser.username + " mentioned you in a comment")
             .additionalPayload({
                 commentId: comment._id.toString(),
-                postId: (<IPost>comment).parent.toString()
+                postId: (<IPost>comment.parent)._id.toString()
             });
     }
 

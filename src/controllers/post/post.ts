@@ -579,22 +579,20 @@ router.post("/:post/comment", upload.fields([{name: "video", maxCount: 1}, {name
             post.comments = await countPostComments(post._id.toString());
             await post.save();
 
-            if ( text ) {
-                const mentionedUsernames = getUsernameMentionsByText(text);
+            // const mentionedUsernames = getUsernameMentionsByText(text);
+            //
+            // if (mentionedUsernames.length) {
+            //     const mentionedUsers = await User.find({
+            //         username: {$in: mentionedUsernames},
+            //         _id: {$ne: post.creator._id}
+            //     });
+            //
+            //     if (mentionedUsers.length) {
+            //         await sendCommentMentionsNotification(mentionedUsers, req.user, comment);
+            //     }
+            // }
 
-                if (mentionedUsernames.length) {
-                    const mentionedUsers = await User.find({
-                        username: {$in: mentionedUsernames},
-                        _id: {$ne: post.creator._id}
-                    });
-
-                    if (mentionedUsers.length) {
-                        await sendCommentMentionsNotification(mentionedUsers, req.user, comment);
-                    }
-                }
-
-                await sendNewCommentNotification(post.creator, req.user, comment);
-            }
+            await sendNewCommentNotification(post.creator, req.user, comment);
         })
         .catch(() => {});
 }));
@@ -632,6 +630,10 @@ async function sendCommentMentionsNotification(toUsers: IUserModel[], byUser: IU
  * @returns {any}
  */
 function getUsernameMentionsByText(text: string) {
+    if ( ! text ) {
+        return [];
+    }
+
     const mentionsRegex = new RegExp("@([a-z0-9_.]+\\b)", "mg");
 
     let matches = text.match(mentionsRegex);
