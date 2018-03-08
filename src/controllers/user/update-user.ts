@@ -98,25 +98,26 @@ function updateFirstName(req: express.Request) {
  */
 function updateLastName(req: express.Request) {
     if ( ! isNullOrUndefined(req.body.user.profile.lastName) ) {
-        if ( ! isNullOrUndefined(req.body.user.profile.lastName) ) {
-            req.checkBody({
-                "user[profile][lastName]": {
-                    matches: {
-                        options: Utilities.stringToRegExp(SystemConfiguration.validations.lastName.regex),
-                        errorMessage: "Last-name doesn't match regex"
-                    },
-                    isLength: {
-                        options: [{
-                            min: SystemConfiguration.validations.lastName.minLength,
-                            max: SystemConfiguration.validations.lastName.maxLength
-                        }],
-                        errorMessage: "Last-name length is invalid"
-                    }
+        req.checkBody({
+            "user[profile][lastName]": {
+                matches: {
+                    options: Utilities.stringToRegExp(SystemConfiguration.validations.lastName.regex),
+                    errorMessage: "Last-name doesn't match regex"
+                },
+                isLength: {
+                    options: [{
+                        min: SystemConfiguration.validations.lastName.minLength,
+                        max: SystemConfiguration.validations.lastName.maxLength
+                    }],
+                    errorMessage: "Last-name length is invalid"
                 }
-            });
-        }
+            }
+        });
 
         req.user.profile.lastName = req.body.user.profile.lastName;
+    }
+    else {
+        req.user.profile.lastName = "";
     }
 }
 
