@@ -4,21 +4,32 @@ block content
     h1.intro
         span.username @#{user.username}
         |
-        | shared a video from #{brand} with you:
+        | shared a video from #{brand} app with you:
 
     .post-container
         .post
-            video(controls=true)
-                source(src=post.video.url, type="video/mp4")
-            .creator
-                .thumbnail
-                    img(src=post.creator.profile && post.creator.profile.picture && post.creator.profile.picture.thumbnail ? post.creator.profile.picture.thumbnail : "/images/user-placeholder.svg")
-                .username=post.creator.username
+            .post-block
+                video(controls=true,poster=post.video.thumbnail)
+                    source(src=post.video.url, type="video/mp4")
+                .creator
+                    .thumbnail
+                        img(src=post.creator.profile && post.creator.profile.picture && post.creator.profile.picture.thumbnail ? post.creator.profile.picture.thumbnail : "/images/user-placeholder.svg")
+                    .post-details
+                        .username=post.creator.username
+                        .timestamp="2 weeks ago"
 
-    script(src='/js/lib/plyr/plyr.min.js')
+    script(src='https://cdn.plyr.io/3.2.1/plyr.js')
     script.
-        plyr.setup('video', {
+        var player = new Plyr('video', {
             controls: [
                 'play', 'progress', 'current-time', 'fullscreen'
             ]
+        });
+
+        player.on('enterfullscreen', function() {
+            $("body").addClass("fullscreen");
+        });
+
+        player.on('exitfullscreen', function() {
+            $("body").removeClass("fullscreen");
         });

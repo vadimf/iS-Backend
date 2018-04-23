@@ -1,10 +1,7 @@
-//@import "lib/bootstrap/bootstrap";
-//@import "lib/font-awesome/font-awesome";
-@import url('https://fonts.googleapis.com/css?family=Montserrat:300,400,500,600,900');
-@import url('https://fonts.googleapis.com/css?family=Open+Sans:700');
+@import url('https://fonts.googleapis.com/css?family=Assistant:300,400&subset=hebrew');
 
 $color__general: #222730;
-$color__emphasis: #f04b43;
+$color__emphasis: #ff6b01;
 
 $break_small: 721px;
 
@@ -14,9 +11,9 @@ html {
 }
 
 body {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Assistant', sans-serif;
   margin: 0;
-  padding: 50px 16px 30px;
+  padding: 70px 16px 30px;
   color: $color__general;
   font-weight: 300;
 
@@ -72,7 +69,13 @@ img {
 
     .app-name {
       color: $color__emphasis;
-      font-weight: 500;
+    }
+
+
+    @media screen and (max-width: $break_small) {
+      font-size: 18px;
+      width: 300px;
+      margin: 0 auto 20px;
     }
   }
 
@@ -100,7 +103,7 @@ img {
   }
 
   img {
-    width: 69px;
+    width: 140px;
     height: auto;
   }
 }
@@ -108,4 +111,17 @@ img {
 @import "share";
 @import "reset";
 @import "messages";
-@import "lib/plyr/plyr";
+@import "https://cdn.plyr.io/3.2.1/plyr.css";
+
+.plyr--video .plyr__controls button.tab-focus:focus, .plyr--video .plyr__controls button:hover {
+  background-color: $color__emphasis !important;
+}
+.plyr__progress--played, .plyr__volume--display,
+.plyr--full-ui input[type=range] {
+  color: $color__emphasis !important;
+}
+
+body.fullscreen .post-container .post .post-block video {
+  width: inherit;
+  height: inherit;
+}
