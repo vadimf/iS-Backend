@@ -40,13 +40,33 @@ const router = express.Router();
  */
 router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const searchQuery: string = req.query.query;
-    const searchRegex = Utilities.stringToRegExp("/.*" + searchQuery + ".*/i");
+    // const searchRegex = searchQuery.searchToRegex();
     const page: number = +req.query.page;
 
-    const conditions = {
-        text: searchRegex,
+    const conditions: any = {
         "creator.blocked": {$ne: true}
     };
+
+    if ( searchQuery ) {
+        searchQuery
+            .split(" ")
+            .forEach((searchString: string) => {
+                if ( ! conditions.$or ) {
+                    conditions.$or = [];
+                }
+
+                const searchRegex = searchString.searchToRegex();
+
+                conditions.$or.push(
+                    {
+                        text: searchRegex,
+                    },
+                    {
+                        tags: searchRegex,
+                    }
+                );
+            });
+    }
 
     const totalResults = await Post.count(conditions);
     const pagination = new Pagination(page, totalResults);
@@ -93,7 +113,7 @@ router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.R
  */
 router.get("/users", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const searchQuery: string = req.query.query;
-    const searchRegex = Utilities.stringToRegExp("/.*" + searchQuery + ".*/i");
+    const searchRegex = searchQuery.searchToRegex();
     const page: number = +req.query.page;
 
     const conditions = {

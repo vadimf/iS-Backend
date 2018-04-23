@@ -97,7 +97,7 @@ class Sorting {
 router
     .get("/", asyncMiddleware(async (req: express.Request, res: express.Response) => {
         const search: string = req.query.search;
-        const searchRegex = Utilities.stringToRegExp("/.*" + search + ".*/i");
+        const searchRegex = search.searchToRegex();
         const sorting = new Sorting(
             req.query["sort-field"] || "created",
             req.query["sort-field"] && req.query["sort-direction"] ? req.query["sort-direction"] : "desc"

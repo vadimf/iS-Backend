@@ -184,14 +184,15 @@ router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail"
         return;
     }
 
-    const text: string = req.body.text as string;
+    const text = req.body.text as string;
+    const tags = req.body.tags instanceof Array ? req.body.tags as string[] : [String(req.body.tags)];
 
     const post = new Post();
     post.text = text;
     post.creator = req.user;
 
     if ( text ) {
-        post.tags = getTagsByText(text);
+        post.tags = tags; // getTagsByText(text);
     }
 
     post.video = await uploadVideo(req);
