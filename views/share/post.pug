@@ -16,7 +16,7 @@ block content
                         img(src=post.creator.profile && post.creator.profile.picture && post.creator.profile.picture.thumbnail ? post.creator.profile.picture.thumbnail : "/images/user-placeholder.svg")
                     .post-details
                         .username=post.creator.username
-                        .timestamp="2 weeks ago"
+                        .timestamp=ta.ago(post.createdAt)
 
     script(src='https://cdn.plyr.io/3.2.1/plyr.js')
     script.
