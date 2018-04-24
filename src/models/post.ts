@@ -184,6 +184,7 @@ PostSchema.methods.toJSON = function() {
         uniqueViews: +this.uniqueViews,
         comments: +this.comments,
         text: this.text,
+        tags: this.tags,
         bookmarked: this.didBookmark(),
         viewed: this.didView()
     };
