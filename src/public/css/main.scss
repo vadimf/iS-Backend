@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css?family=Assistant:300,400&subset=hebrew');
 
-$color__general: #222730;
+$color__general: #FFF;
 $color__emphasis: #ff6b01;
 
 $break_small: 721px;
@@ -14,8 +14,9 @@ body {
   font-family: 'Assistant', sans-serif;
   margin: 0;
   padding: 70px 16px 30px;
-  color: $color__general;
   font-weight: 300;
+  background-color: #16161a;
+  color: #FFF;
 
   @media screen and (max-width: $break_small) {
     padding: 16px 0 20px 0;

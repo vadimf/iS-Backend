@@ -99,4 +99,6 @@ export class AppError {
     static FacebookAuthenticationError = new AppError(StatusCode.Unauthorized, 3002, "There's been a problem authenticating with facebook");
 
     static CannotDeleteOwnUser = new AppError(StatusCode.Unauthorized, 100001, "Cannot remove yourself");
+
+    static PasswordResetExpired = new AppError(StatusCode.NotFound, 200, "Password restoration expired.<br /><div style='font-weight: normal; font-size: 11pt;'>Please go to the application and try to reset your password again.</div>");
 }

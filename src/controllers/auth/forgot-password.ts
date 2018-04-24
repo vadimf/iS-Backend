@@ -13,7 +13,7 @@ async function getUserByToken(token: string) {
     const user = await User.findOne({"password.resetToken": token});
 
     if ( ! user ) {
-        throw AppError.ObjectDoesNotExist;
+        throw AppError.PasswordResetExpired;
     }
 
     if ( user.blocked ) {

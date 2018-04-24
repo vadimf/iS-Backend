@@ -71,10 +71,10 @@ async function getFeedPosts(pagination: Pagination, conditions?: any, sorting?: 
             $sort: sorting
         },
         {
-            $limit: pagination.resultsPerPage
+            $skip: pagination.offset
         },
         {
-            $skip: pagination.offset
+            $limit: pagination.resultsPerPage
         }
     ]);
 }
@@ -153,7 +153,7 @@ router.get("/popular", asyncMiddleware(async (req: express.Request, res: express
 }));
 
 export async function getPostsByConditions(conditions: any, req: express.Request, res: express.Response, sorting?: any) {
-    const page: number = req.query.page;
+    const page: number = Number(req.query.page);
     const total = await countFeedPosts(conditions);
     const pagination = new Pagination(page, total);
 

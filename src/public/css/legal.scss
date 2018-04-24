@@ -1,7 +1,8 @@
-@import url('https://fonts.googleapis.com/css?family=Montserrat:300,500');
+@import url('https://fonts.googleapis.com/css?family=Assistant:300,400&subset=hebrew');
 
-$color__general: #222730;
+$color__general: #8f9094;
 $color__emphasis: #64baff;
+$color__emphasis: #ff6b01;
 
 $break_small: 721px;
 
@@ -11,13 +12,17 @@ html {
 }
 
 body {
-  font-family: 'Montserrat', sans-serif;
-  background-color: #FFF;
+  font-family: 'Assistant', sans-serif;
+  background-color: #16161a;
   margin: 0;
   padding: 16px;
   color: $color__general;
   font-weight: 300;
   font-size: 14px;
+}
+
+a {
+  color: $color__emphasis;
 }
 
 img {
@@ -46,7 +51,7 @@ h1 {
   }
 
   img {
-    width: 69px;
+    width: 140px;
     height: auto;
   }
 }
