@@ -265,8 +265,8 @@ export async function getPostsListByConditions(conditions: any, req: express.Req
         .find(conditions)
         .sort("-createdAt")
         .populate("creator")
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset);
+        .skip(pagination.offset)
+        .limit(pagination.resultsPerPage);
 
     await populateFollowing(posts, req.user, "creator");
 
@@ -487,8 +487,8 @@ router.get("/:post/comments", asyncMiddleware(async (req: express.Request, res: 
     const comments = await Post
         .find({parent: post._id})
         .sort("-createdAt")
-        .limit(pagination.resultsPerPage)
         .skip(pagination.offset)
+        .limit(pagination.resultsPerPage)
         .populate("creator");
 
     await populateFollowing(comments, req.user, "creator");

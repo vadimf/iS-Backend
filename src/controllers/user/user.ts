@@ -118,8 +118,8 @@ export async function getFollowsByConditions(conditions: any, followers = false,
         .find(conditions)
         .populate("follower")
         .populate("following")
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset);
+        .skip(pagination.offset)
+        .limit(pagination.resultsPerPage);
 
     let responseUsers: IForeignUser[];
 

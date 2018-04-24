@@ -74,8 +74,8 @@ router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.R
     const posts = await Post
         .find(conditions)
         .populate("creator")
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset);
+        .skip(pagination.offset)
+        .limit(pagination.resultsPerPage);
 
     await populateFollowing(posts, req.user, "creator");
 
@@ -127,8 +127,8 @@ router.get("/users", asyncMiddleware(async (req: express.Request, res: express.R
 
     const users = await User
         .find(conditions)
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset);
+        .skip(pagination.offset)
+        .limit(pagination.resultsPerPage);
 
     await populateFollowing(users, req.user);
 
@@ -298,8 +298,8 @@ router.post("/contacts", asyncMiddleware(async (req: express.Request, res: expre
 
     const users = await User
         .find(conditions)
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset);
+        .skip(pagination.offset)
+        .limit(pagination.resultsPerPage);
 
     await populateFollowing(users, req.user);
 

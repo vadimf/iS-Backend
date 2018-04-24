@@ -41,8 +41,8 @@ router.get("/suggestions", asyncMiddleware(async (req: express.Request, res: exp
     const users = await User
         .find({username: { $nin: [ null, "" ] }, _id: {$ne: req.user._id}})
         .sort("-followers")
-        .limit(pagination.resultsPerPage)
-        .skip(pagination.offset);
+        .skip(pagination.offset)
+        .limit(pagination.resultsPerPage);
 
     await populateFollowing(users, req.user);
 
