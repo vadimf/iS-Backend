@@ -185,7 +185,7 @@ router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail"
     }
 
     const text = req.body.text as string;
-    const tags = req.body.tags instanceof Array ? req.body.tags as string[] : [String(req.body.tags)];
+    const tags = req.body.tags instanceof Array ? req.body.tags as string[] : (req.body.tags ? [String(req.body.tags)] : []);
 
     const post = new Post();
     post.text = text;
