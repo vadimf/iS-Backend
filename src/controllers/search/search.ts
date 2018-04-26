@@ -80,7 +80,7 @@ router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.R
     await populateFollowing(posts, req.user, "creator");
 
     res.response({
-        users: posts,
+        posts: posts,
         pagination: pagination
     });
 }));
