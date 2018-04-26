@@ -593,7 +593,9 @@ router.post("/:post/comment", upload.fields([{name: "video", maxCount: 1}, {name
             //     }
             // }
 
-            await sendNewCommentNotification(post.creator, req.user, comment);
+            if ( ! (post.creator as IUserModel)._id.isEqual(req.user._id) ) {
+                await sendNewCommentNotification(post.creator, req.user, comment);
+            }
         })
         .catch(() => {});
 }));
