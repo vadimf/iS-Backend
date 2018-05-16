@@ -20,7 +20,7 @@ router.get("/about", (req: express.Request, res: express.Response) => {
 router.get("/terms", (req: express.Request, res: express.Response) => {
     renderLegalDocument(
         res,
-        "Terms",
+        "Terms and Conditions of Use of Tellyou Podium Ltd.\n",
         getLegalDocumentContent("terms-content")
     );
 });
@@ -28,7 +28,7 @@ router.get("/terms", (req: express.Request, res: express.Response) => {
 router.get("/privacy", (req: express.Request, res: express.Response) => {
     renderLegalDocument(
         res,
-        "Privacy",
+        "PRIVACY POLICY",
         getLegalDocumentContent("privacy-content")
     );
 });
@@ -38,13 +38,16 @@ function renderLegalDocument(res: express.Response, title: string, content: stri
         brand: process.env.APP_NAME,
         title: title,
         content: content,
-        displayDevelopmentCopyrights: displayDevelopmentCopyrights
+        displayDevelopmentCopyrights: displayDevelopmentCopyrights,
+        links: SystemConfiguration.pages,
     });
 }
 
 function getLegalDocumentContent(file: String) {
     const path = __dirname + "/../../../views/legal/" + file + ".pug";
-    return pug.renderFile(path);
+    return pug.renderFile(path, {
+        links: SystemConfiguration.pages,
+    });
 }
 
 export default router;

@@ -10,19 +10,19 @@ const StaticPages = {
 
 const UsernameValidation = {
     minLength           : 4,
-    maxLength           : 16,
+    maxLength           : 25,
     regex               : "^[a-z0-9_.]+$"
 };
 
 const FirstNameValidation = {
     minLength           : 2,
-    maxLength           : 16,
+    maxLength           : 50,
     regex               : "/\\b[^\\d\\W]+\\b/"
 };
 
 const LastNameValidation = {
     minLength           : 0,
-    maxLength           : 16,
+    maxLength           : 50,
     regex               : "/\\b[^\\d\\W]+\\b/"
 };
 
@@ -33,7 +33,7 @@ const PostTextValidation = {
 
 const BioValidation = {
     minLength           : 0,
-    maxLength           : 255
+    maxLength           : 120
 };
 
 const PasswordValidation = {

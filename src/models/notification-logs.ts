@@ -45,7 +45,7 @@ NotificationLogSchema.methods.toJSON = function () {
         title: "" + this.payload.data.title,
         message: "" + this.payload.data.message,
         devices: devices,
-        failures: +this.success.failureCount
+        failures: this.success ? +this.success.failureCount : this.tokens.length,
     };
 };
 

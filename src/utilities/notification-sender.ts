@@ -54,7 +54,7 @@ export class NotificationSender {
         const that = this;
 
         return new Promise((resolve, reject) => {
-            if ( ! this._tokens ) {
+            if ( ! this._tokens || ! this._tokens.length ) {
                 return reject("No tokens");
             }
 
@@ -64,6 +64,8 @@ export class NotificationSender {
             notificationLog.tokens = this._tokens;
             notificationLog.payload = payload;
             notificationLog.sentByAdministrator = this._sentFromCms;
+
+            console.log(notificationLog);
 
             firebaseClient()
                 .messaging()
@@ -109,9 +111,9 @@ export class NotificationSender {
                 })
                 .catch(async (error) => {
                     notificationLog.error = error;
-                    reject(error);
-
                     await notificationLog.save();
+
+                    reject(error);
                 });
         });
     }

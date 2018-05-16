@@ -50,7 +50,7 @@ router
 
         (async () => {
 
-            const users = await User.find({blocked: {$ne: false}});
+            const users = await User.find({blocked: {$ne: true}});
 
             const notificationSender = new CustomNotificationSender(users);
             await notificationSender
