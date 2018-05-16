@@ -8,6 +8,7 @@ import { getPostsListByConditions } from "../post/post";
 import { User, IForeignUser } from "../../models/user";
 import { Utilities } from "../../utilities/utilities";
 import { SystemConfiguration } from "../../models/system-vars";
+import { default as PhoneUpdateRouter } from "./phone-update";
 
 const router = express.Router();
 
@@ -268,8 +269,7 @@ router.get("/username-exists", asyncMiddleware(async (req: express.Request, res:
     });
 }));
 
-
+router.use("/phone", PhoneUpdateRouter);
 router.use("/:username", ForeignUserRouter);
-
 
 export default router;

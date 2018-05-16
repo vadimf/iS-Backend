@@ -2,7 +2,7 @@ import * as express from "express";
 import { IPost, IVideo, Post, PostReportReason } from "../../models/post";
 import { SystemConfiguration } from "../../models/system-vars";
 import { AppError } from "../../models/app-error";
-import { IUserModel, populateFollowing, User } from "../../models/user";
+import { IUserModel, populateFollowing } from "../../models/user";
 import { asyncMiddleware } from "../../server";
 import { Pagination } from "../../models/pagination";
 import { countPostComments } from "../comment/comment";
@@ -167,7 +167,7 @@ interface IUploadedFile {
  * @apiSuccess {int}            post.comments Post comments
  * @apiSuccess {String}         post.text Post text
  */
-router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail", maxCount: 1}]), asyncMiddleware(async (req: express.Request, res: express.Response) => {
+router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail", maxCount: 1}, {name: "sample", maxCount: 1}]), asyncMiddleware(async (req: express.Request, res: express.Response) => {
     req.checkBody({
         "text": {
             isLength: {
@@ -205,8 +205,10 @@ router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail"
 export async function uploadVideo(req: express.Request): Promise<IVideo> {
     const videoFilesArray: IUploadedFile[] = (<any>req.files)["video"];
     const thumbnailFilesArray: IUploadedFile[] = (<any>req.files)["thumbnail"];
+    const sampleFilesArray: IUploadedFile[] = (<any>req.files)["sample"];
     const videoFile = videoFilesArray.length > 0 ? videoFilesArray[0] as IUploadedFile : null;
     const thumbnailFile = thumbnailFilesArray.length > 0 ? thumbnailFilesArray[0] : null;
+    const sampleFile = thumbnailFilesArray.length > 0 ? sampleFilesArray[0] : null;
     const duration: number = req.body.duration as number;
 
     req.setTimeout(0, null);
@@ -247,12 +249,30 @@ export async function uploadVideo(req: express.Request): Promise<IVideo> {
             }
         );
 
+    let sampleUploadingPromise: {url: string};
+
+    if ( sampleFile ) {
+        sampleUploadingPromise = await fileStorageManager
+            .fileName(fileName)
+            .fromBuffer(
+                videoFile.buffer,
+                {
+                    allowedMimeTypes: [MimeType.VIDEO_MP4],
+                    knownData: {
+                        mime: videoFile.mimetype,
+                        ext: "mp4"
+                    }
+                }
+            );
+    }
+
     // const filesUploadingResults = await Promise.all([thumbnailUploadingPromise, videoUploadingPromise]);
 
     return {
         url: videoUploadingPromise.url,
         thumbnail: thumbnailUploadingPromise.url,
-        duration: duration
+        duration: duration,
+        sample: sampleUploadingPromise && sampleUploadingPromise.url ? sampleUploadingPromise.url : null,
     } as IVideo;
 }
 
@@ -444,7 +464,7 @@ router
             .then(() => {})
             .catch(() => {});
 
-        post.remove();
+        await post.remove();
     }));
 
 
@@ -614,41 +634,41 @@ async function sendNewCommentNotification(toUser: IUserModel, byUser: IUserModel
         .send();
 }
 
-/**
- * Send a notification about comment mentions in a post to the mentioned users
- *
- * @param {IUserModel[]} toUsers
- * @param {IUserModel} byUser
- * @param {ICommentModel} comment
- * @returns {Promise<any>}
- */
-async function sendCommentMentionsNotification(toUsers: IUserModel[], byUser: IUserModel, comment: IPost) {
-    return await (new CustomNotificationSender(toUsers))
-        .mention(byUser, comment)
-        .send();
-}
-
-/**
- * @param {string} text
- * @returns {any}
- */
-function getUsernameMentionsByText(text: string) {
-    if ( ! text ) {
-        return [];
-    }
-
-    const mentionsRegex = new RegExp("@([a-z0-9_.]+\\b)", "mg");
-
-    let matches = text.match(mentionsRegex);
-    if (matches && matches.length) {
-        matches = matches.map(function(match) {
-            return match.slice(1);
-        });
-        return _.uniq(matches);
-    } else {
-        return [];
-    }
-}
+// /**
+//  * Send a notification about comment mentions in a post to the mentioned users
+//  *
+//  * @param {IUserModel[]} toUsers
+//  * @param {IUserModel} byUser
+//  * @param {ICommentModel} comment
+//  * @returns {Promise<any>}
+//  */
+// async function sendCommentMentionsNotification(toUsers: IUserModel[], byUser: IUserModel, comment: IPost) {
+//     return await (new CustomNotificationSender(toUsers))
+//         .mention(byUser, comment)
+//         .send();
+// }
+//
+// /**
+//  * @param {string} text
+//  * @returns {any}
+//  */
+// function getUsernameMentionsByText(text: string) {
+//     if ( ! text ) {
+//         return [];
+//     }
+//
+//     const mentionsRegex = new RegExp("@([a-z0-9_.]+\\b)", "mg");
+//
+//     let matches = text.match(mentionsRegex);
+//     if (matches && matches.length) {
+//         matches = matches.map(function(match) {
+//             return match.slice(1);
+//         });
+//         return _.uniq(matches);
+//     } else {
+//         return [];
+//     }
+// }
 
 /**
  * @param {string} text

@@ -5,7 +5,6 @@ import { Post } from "../../models/post";
 import { Utilities } from "../../utilities/utilities";
 import { asyncMiddleware } from "../../server";
 import { IPhoneNumberModel } from "../../models/phone-number";
-import { AppError } from "../../models/app-error";
 
 const router = express.Router();
 
@@ -138,7 +137,6 @@ router.get("/users", asyncMiddleware(async (req: express.Request, res: express.R
     });
 }));
 
-
 function reformatPhoneNumber(phoneNumber: IPhoneNumberModel, currentUser: IUserModel) {
     phoneNumber.number = phoneNumber.number.replace(/[^a-z +\d\s]+/gi, "");
 
@@ -179,7 +177,6 @@ function reformatPhoneNumber(phoneNumber: IPhoneNumberModel, currentUser: IUserM
     }
 }
 
-
 /**
  * @api {search} /search/contacts?page=1 Find users from your contacts list
  * @apiName UserContacts
@@ -216,97 +213,106 @@ router.post("/contacts", asyncMiddleware(async (req: express.Request, res: expre
     const emails: String[] = req.body.emails;
     const phoneNumbers: IPhoneNumberModel[] = req.body.phones;
 
-    if ( ! emails.length && ! phoneNumbers.length ) {
-        throw AppError.RequestValidation;
-    }
+    if ( emails.length || phoneNumbers.length ) {
+        let emailConditions: any;
+        let phoneNumberConditions: any;
 
-    let emailConditions: any = {};
-    let phoneNumberConditions: any = {};
+        if (phoneNumbers.length) {
+            const phoneNumbersForConditions: { "phone.number": string, "phone.country": string, "phone.area"?: string }[] = [];
 
-    if ( phoneNumbers.length ) {
-        const phoneNumbersForConditions: {"phone.number": string, "phone.country": string, "phone.area"?: string}[] = [];
+            for (const phoneNumber of phoneNumbers) {
+                reformatPhoneNumber(phoneNumber, req.user);
 
-        for (const phoneNumber of phoneNumbers) {
-            reformatPhoneNumber(phoneNumber, req.user);
+                if (phoneNumber.country && phoneNumber.number) {
+                    const conditions: { "phone.number": string, "phone.country": string, "phone.area"?: string } = {
+                        "phone.number": phoneNumber.number,
+                        "phone.country": phoneNumber.country
+                    };
 
-            if ( phoneNumber.country && phoneNumber.number ) {
-                const conditions: {"phone.number": string, "phone.country": string, "phone.area"?: string} = {
-                    "phone.number": phoneNumber.number,
-                    "phone.country": phoneNumber.country
-                };
+                    if (phoneNumber.area) {
+                        conditions["phone.area"] = phoneNumber.area;
+                    }
 
-                if ( phoneNumber.area ) {
-                    conditions["phone.area"] = phoneNumber.area;
+                    phoneNumbersForConditions.push(conditions);
                 }
+            }
 
-                phoneNumbersForConditions.push(conditions);
+            if (phoneNumbersForConditions.length) {
+                phoneNumberConditions = phoneNumbersForConditions;
             }
         }
 
-        if ( phoneNumbersForConditions.length ) {
-            phoneNumberConditions = phoneNumbersForConditions;
-        }
-    }
+        if (emails.length) {
+            const formattedEmails: string[] = [];
 
-    if ( emails.length ) {
-        const formattedEmails: string[] = [];
-
-        for ( const email of emails ) {
-            if ( Utilities.emailValid(email.toLowerCase()) ) {
-                formattedEmails.push(email.toLowerCase());
+            for (const email of emails) {
+                if (Utilities.emailValid(email.toLowerCase())) {
+                    formattedEmails.push(email.toLowerCase());
+                }
             }
+
+            emailConditions = {
+                email: {
+                    $in: formattedEmails.filter(function (item, i, ar) {
+                        return ar.indexOf(item) === i;
+                    })
+                }
+            };
         }
 
-        emailConditions = {
-            email: {
-                $in: formattedEmails.filter(function(item, i, ar) { return ar.indexOf(item) === i; })
-            }
+        const page: number = +req.query.page;
+        let searchConditions = {};
+
+        if (phoneNumberConditions && emailConditions) {
+            searchConditions = phoneNumberConditions.concat(emailConditions);
+        }
+        else if (emailConditions) {
+            searchConditions = emailConditions;
+        }
+        else if (phoneNumberConditions) {
+            searchConditions = phoneNumberConditions;
+        }
+        else {
+            const pagination = new Pagination(page, 0);
+
+            res.response({
+                users: [],
+                pagination: pagination
+            });
+
+            return;
+        }
+
+        const conditions = {
+            _id: {$ne: req.user._id},
+            blocked: {$ne: true},
+            $or: searchConditions
         };
-    }
 
-    const page: number = +req.query.page;
-    let searchConditions = {};
+        const total = await User.count(conditions);
+        const pagination = new Pagination(page, total);
 
-    if ( phoneNumberConditions && emailConditions ) {
-        searchConditions = phoneNumberConditions.concat(emailConditions);
-    }
-    else if ( emailConditions ) {
-        searchConditions = emailConditions;
-    }
-    else if ( phoneNumberConditions ) {
-        searchConditions = phoneNumberConditions;
-    }
-    else {
-        const pagination = new Pagination(page, 0);
+        const users = await User
+            .find(conditions)
+            .limit(pagination.resultsPerPage)
+            .skip(pagination.offset);
+
+        await populateFollowing(users, req.user);
 
         res.response({
-            users: [],
+            users: foreignUsersArray(users),
             pagination: pagination
         });
-
-        return;
     }
+    else {
+        const pagination = new Pagination(0, 0);
+        const users: any[] = [];
 
-    const conditions = {
-        _id: {$ne: req.user._id},
-        blocked: {$ne: true},
-        $or: searchConditions
-    };
-
-    const total = await User.count(conditions);
-    const pagination = new Pagination(page, total);
-
-    const users = await User
-        .find(conditions)
-        .skip(pagination.offset)
-        .limit(pagination.resultsPerPage);
-
-    await populateFollowing(users, req.user);
-
-    res.response({
-        users: foreignUsersArray(users),
-        pagination: pagination
-    });
+        res.response({
+            users: users,
+            pagination: pagination
+        });
+    }
 }));
 
 export default router;

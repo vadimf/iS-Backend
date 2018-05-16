@@ -1,8 +1,10 @@
 import * as mongoose from "mongoose";
 import { IPhoneNumberModel } from "./phone-number";
+import { IUserModel } from "./user";
 
 export interface IPhoneConfirmationRequest extends mongoose.Document, IPhoneNumberModel {
     code: string;
+    user?: IUserModel;
 }
 
 const PhoneConfirmationRequestSchema = new mongoose.Schema(

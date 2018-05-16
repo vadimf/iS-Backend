@@ -38,6 +38,7 @@ export interface IPost extends mongoose.Document {
 export interface IVideo {
     url: string;
     thumbnail: string;
+    sample: string;
     duration: number;
 }
 
@@ -53,6 +54,7 @@ export const VideoSchema = new mongoose.Schema(
     {
         url: String,
         thumbnail: String,
+        sample: String,
         duration: Number
     }
 );
@@ -220,9 +222,10 @@ export function postsToAdministrators(posts: IPost[]) {
 
 VideoSchema.methods.toJSON = function() {
     return {
-        url: this.url,
-        thumbnail: this.thumbnail,
-        duration: this.duration
+        url: this.url || null,
+        thumbnail: this.thumbnail || null,
+        sample: this.sample || null,
+        duration: this.duration || 0,
     };
 };
 
