@@ -5,7 +5,7 @@ const StaticPages = {
     privacy             : legalPagesLinkPrefix + "privacy",
     terms               : legalPagesLinkPrefix + "terms",
     libraries           : "http://globalbit.co.il/legal/libs/",
-    postShare           : process.env.API_URL + "share/:post"
+    postShare           : process.env.API_URL + "share/:username/:post"
 };
 
 const UsernameValidation = {
