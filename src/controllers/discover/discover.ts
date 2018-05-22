@@ -34,12 +34,24 @@ const router = express.Router();
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/suggestions", asyncMiddleware(async (req: express.Request, res: express.Response) => {
-    const total = await User.count({});
+    const conditions = {
+        blocked: {
+            $ne: true,
+        },
+        username: {
+            $nin: [ null, "" ],
+        },
+        _id: {
+            $ne: req.user._id
+        },
+    };
+
+    const total = await User.count(conditions);
     const page: number = +req.query.page;
     const pagination = new Pagination(page, total);
 
     const users = await User
-        .find({username: { $nin: [ null, "" ] }, _id: {$ne: req.user._id}})
+        .find(conditions)
         .sort("-followers")
         .skip(pagination.offset)
         .limit(pagination.resultsPerPage);

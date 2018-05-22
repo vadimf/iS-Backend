@@ -32,7 +32,7 @@
     "globals": {
       "__TS_CONFIG__": "tsconfig.json"
     },
-    "moduleFileExtensions": [
+    "modupm2leFileExtensions": [
       "ts",
       "js"
     ],
@@ -46,7 +46,6 @@
   },
   "dependencies": {
     "@types/dateformat": "^1.0.1",
-    "@types/fluent-ffmpeg": "^2.1.6",
     "@types/mongoose": "^4.7.29",
     "async": "^2.6.0",
     "bcrypt-nodejs": "^0.0.3",
@@ -62,12 +61,8 @@
     "express-flash": "^0.0.2",
     "express-validator": "^3.2.1",
     "facebookgraph": "^0.3.0",
-    "ffmpeg-stream": "^0.5.0",
     "file-type": "^7.4.0",
     "firebase-admin": "^5.5.1",
-    "fluent-ffmpeg": "^2.1.2",
-    "fluent-ffmpeg-extended": "^1.5.2",
-    "get-video-duration": "^0.2.0",
     "gifify": "^2.4.0",
     "he": "^1.1.1",
     "helmet": "^3.9.0",
@@ -87,6 +82,7 @@
     "request-promise": "^4.2.2",
     "sharp": "^0.18.4",
     "stream-buffers": "^3.0.1",
+    "stream-to-buffer": "^0.1.0",
     "time-ago": "^0.2.1",
     "twilio": "^3.11.0",
     "typed-promisify": "^0.4.0",
@@ -131,7 +127,7 @@
     "concurrently": "^3.5.1",
     "jest": "^19.0.2",
     "json-loader": "^0.5.7",
-    "node-sass": "^4.7.2",
+    "node-sass": "^4.9.0",
     "nodemon": "^1.13.3",
     "shelljs": "^0.7.8",
     "supertest": "^2.0.1",

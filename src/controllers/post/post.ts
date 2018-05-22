@@ -15,7 +15,7 @@ import { Administrator } from "../../models/admin/administrator";
 import * as nodemailer from "nodemailer";
 import * as pug from "pug";
 // const getDuration = require("get-video-duration");
-// const gifify = require("gifify");
+const gifify = require("gifify");
 
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -102,28 +102,42 @@ function addViewToPost(post: IPost, user: IUserModel) {
 //     return Math.ceil(await getDuration(url));
 // }
 //
-// async function convertVideoToGif(videoUrl: string, gifFileName: string, videoDuration: number, gifDuration: number): Promise<string> {
-//     const gifStartPoint = Math.floor(videoDuration / 2 - gifDuration / 2);
-//
-//     const gififyOptions = {
-//         resize: "400:400",
-//         from: gifStartPoint,
-//         to: gifStartPoint + gifDuration
-//     };
-//
-//     console.log("Starting convertion to gif with options", gififyOptions);
-//
-//     const gififyStream = gifify(videoUrl, gififyOptions);
-//
-//     const gifStorageResults = await (new StorageManager())
-//         .fileName(gifFileName)
-//         .fromStream(gififyStream, {
-//             mime: MimeType.IMAGE_GIF,
-//             ext: "gif"
-//         });
-//
-//     return gifStorageResults.url;
-// }
+async function convertVideoToGif(videoUrl: string, gifFileName: string, videoDuration: number, gifDuration: number): Promise<string> {
+    let from = 0;
+    let to = gifDuration;
+
+    videoDuration = Math.floor(videoDuration);
+
+    if ( videoDuration > gifDuration ) {
+        const divided = Math.floor((videoDuration - gifDuration) / 2);
+        from = divided;
+        to = divided + gifDuration;
+    }
+    else if ( videoDuration < gifDuration ) {
+        from = 0;
+        to = videoDuration;
+    }
+
+    const gififyOptions = {
+        resize: "-1:400",
+        from: from,
+        to: to,
+        compress: 10, // up tp 100. 0 is better quality
+        colors: 240,  // up to 255
+        fps: 10,
+    };
+
+    const gififyStream = gifify(videoUrl, gififyOptions);
+
+    const gifStorageResults = await (new StorageManager())
+        .fileName(gifFileName)
+        .fromStream(gififyStream, {
+            mime: MimeType.IMAGE_GIF,
+            ext: "gif"
+        });
+
+    return gifStorageResults.url;
+}
 
 interface IUploadedFile {
     fieldname: string;
@@ -167,7 +181,7 @@ interface IUploadedFile {
  * @apiSuccess {int}            post.comments Post comments
  * @apiSuccess {String}         post.text Post text
  */
-router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail", maxCount: 1}, {name: "sample", maxCount: 1}]), asyncMiddleware(async (req: express.Request, res: express.Response) => {
+router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail", maxCount: 1}]), asyncMiddleware(async (req: express.Request, res: express.Response) => {
     req.checkBody({
         "text": {
             isLength: {
@@ -195,28 +209,6 @@ router.post("/", upload.fields([{name: "video", maxCount: 1}, {name: "thumbnail"
         post.tags = tags; // getTagsByText(text);
     }
 
-    post.video = await uploadVideo(req);
-
-    await post.save();
-
-    res.response({post: post});
-}));
-
-export async function uploadVideo(req: express.Request): Promise<IVideo> {
-    const videoFilesArray: IUploadedFile[] = (<any>req.files)["video"];
-    const thumbnailFilesArray: IUploadedFile[] = (<any>req.files)["thumbnail"];
-    const sampleFilesArray: IUploadedFile[] = (<any>req.files)["sample"];
-    const videoFile = videoFilesArray.length > 0 ? videoFilesArray[0] as IUploadedFile : null;
-    const thumbnailFile = thumbnailFilesArray.length > 0 ? thumbnailFilesArray[0] : null;
-    const sampleFile = thumbnailFilesArray.length > 0 ? sampleFilesArray[0] : null;
-    const duration: number = req.body.duration as number;
-
-    req.setTimeout(0, null);
-
-    if ( ! videoFile || ! thumbnailFile ) {
-        throw AppError.UploadingError;
-    }
-
     const fileName = req.user._id.toString() + "/" + Utilities.randomStringArguments(
         24,
         true,
@@ -225,9 +217,34 @@ export async function uploadVideo(req: express.Request): Promise<IVideo> {
         false
     );
 
+    post.video = await uploadVideo(req, fileName);
+    await post.save();
+
+    uploadSample(req, post, fileName)
+        .then(() => {})
+        .catch(() => {
+            console.warn("Gif uploading failed", post._id);
+        });
+
+    res.response({post: post});
+}));
+
+export async function uploadVideo(req: express.Request, fileName: string): Promise<IVideo> {
+    const videoFilesArray: IUploadedFile[] = (<any>req.files)["video"];
+    const thumbnailFilesArray: IUploadedFile[] = (<any>req.files)["thumbnail"];
+    const videoFile = videoFilesArray && videoFilesArray.length > 0 ? videoFilesArray[0] as IUploadedFile : null;
+    const thumbnailFile = thumbnailFilesArray && thumbnailFilesArray.length > 0 ? thumbnailFilesArray[0] : null;
+    const duration: number = req.body.duration as number;
+
+    req.setTimeout(0, null);
+
+    if ( ! videoFile || ! thumbnailFile ) {
+        throw AppError.UploadingError;
+    }
+
     const fileStorageManager = new StorageManager();
 
-    const thumbnailUploadingPromise = await fileStorageManager
+    const thumbnailUploadingPromise = fileStorageManager
         .fileName(fileName + ".thumb")
         .fromBuffer(
             thumbnailFile.buffer,
@@ -236,7 +253,7 @@ export async function uploadVideo(req: express.Request): Promise<IVideo> {
             }
         );
 
-    const videoUploadingPromise = await fileStorageManager
+    const videoUploadingPromise = fileStorageManager
         .fileName(fileName)
         .fromBuffer(
             videoFile.buffer,
@@ -249,31 +266,21 @@ export async function uploadVideo(req: express.Request): Promise<IVideo> {
             }
         );
 
-    let sampleUploadingPromise: {url: string};
-
-    if ( sampleFile ) {
-        sampleUploadingPromise = await fileStorageManager
-            .fileName(fileName)
-            .fromBuffer(
-                videoFile.buffer,
-                {
-                    allowedMimeTypes: [MimeType.VIDEO_MP4],
-                    knownData: {
-                        mime: videoFile.mimetype,
-                        ext: "mp4"
-                    }
-                }
-            );
-    }
-
-    // const filesUploadingResults = await Promise.all([thumbnailUploadingPromise, videoUploadingPromise]);
+    const videoFilesUploadingPromises = await Promise.all([thumbnailUploadingPromise, videoUploadingPromise]);
 
     return {
-        url: videoUploadingPromise.url,
-        thumbnail: thumbnailUploadingPromise.url,
+        url: videoFilesUploadingPromises[1].url,
+        thumbnail: videoFilesUploadingPromises[0].url,
         duration: duration,
-        sample: sampleUploadingPromise && sampleUploadingPromise.url ? sampleUploadingPromise.url : null,
     } as IVideo;
+}
+
+export async function uploadSample(req: express.Request, post: IPost, fileName: string) {
+    console.log("Gif conversion started", new Date());
+    post.video.gif = await convertVideoToGif(post.video.url, fileName + ".animated", post.video.duration, 6);
+    console.log("Gif conversion ended", new Date());
+
+    return post.save();
 }
 
 export async function getPostsListByConditions(conditions: any, req: express.Request, res: express.Response) {
@@ -590,7 +597,15 @@ router.post("/:post/comment", upload.fields([{name: "video", maxCount: 1}, {name
         comment.tags = getTagsByText(text);
     }
 
-    comment.video = await uploadVideo(req);
+    const fileName = req.user._id.toString() + "/" + Utilities.randomStringArguments(
+        24,
+        true,
+        false,
+        true,
+        false
+    );
+
+    comment.video = await uploadVideo(req, fileName);
 
     res.response({comment: comment});
 
