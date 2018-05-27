@@ -51,9 +51,9 @@ export async function getPostById(id: string, filterBlockedUsers: boolean = true
         throw AppError.ObjectDoesNotExist;
     }
 
-    if ( post.creator.blocked && filterBlockedUsers ) {
-        throw AppError.ObjectDoesNotExist;
-    }
+    // if ( post.creator.blocked && filterBlockedUsers ) {
+    //     throw AppError.ObjectDoesNotExist;
+    // }
 
     return post;
 }
@@ -483,6 +483,9 @@ router
 
             if ( parentPost ) {
                 parentPost.comments = await Post.count({parent: parentPostId});
+
+                console.log(parentPost.comments);
+
                 await parentPost.save();
             }
         }
@@ -502,7 +505,7 @@ router
  * @apiSuccess {User}           comments.creator Creator (user) object
  * @apiSuccess {String}             comments.creator.username Username
  * @apiSuccess {Profile}            comments.creator.profile User's profile metadata
- * @apiSuccess {String}                 comments.creator.profile.firstName First name
+ * @apiSuccess {String}                 comments.creator.profile.firstName First namenpm
  * @apiSuccess {String}                 comments.creator.profile.lastName Last name
  * @apiSuccess {Object}                 comments.creator.profile.picture User's profile picture
  * @apiSuccess {String}                     comments.creator.profile.picture.url Url
