@@ -1,5 +1,5 @@
 import * as express from "express";
-import {IPost, IPostReport, IVideo, Post, PostReportReason} from "../../models/post";
+import { IPost, IPostReport, IVideo, Post, PostReportReason } from "../../models/post";
 import { SystemConfiguration } from "../../models/system-vars";
 import { AppError } from "../../models/app-error";
 import { IUserModel, populateFollowing } from "../../models/user";
@@ -475,6 +475,17 @@ router
         Promise.all([removeVideoFilePromise, removeVideoThumbnailPromise])
             .then(() => {})
             .catch(() => {});
+
+        if ( post.parent ) {
+            const parentPostId = post.parent as mongoose.Types.ObjectId;
+
+            const parentPost = await getPostById(parentPostId.toString());
+
+            if ( parentPost ) {
+                parentPost.comments--;
+                await parentPost.save();
+            }
+        }
 
         await post.remove();
     }));
