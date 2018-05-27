@@ -56,12 +56,8 @@ export async function followUser(byUser: IUserModel, toUser: IUserModel) {
     follower.follower = byUser._id;
     follower.following = toUser._id;
 
-    follower
-        .save()
-        .then(async () => {
-            await updateCounters(byUser, toUser);
-        })
-        .catch(() => {});
+    await follower.save();
+    await updateCounters(byUser, toUser);
 }
 
 /**
@@ -82,9 +78,6 @@ export async function unfollowUser(byUser: IUserModel, toUser: IUserModel) {
         throw AppError.ObjectDoesNotExist;
     }
 
-    Follower.remove({following: toUser._id, follower: byUser._id})
-        .then(async () => {
-            await updateCounters(byUser, toUser);
-        })
-        .catch(() => {});
+    await Follower.remove({following: toUser._id, follower: byUser._id});
+    await updateCounters(byUser, toUser);
 }
