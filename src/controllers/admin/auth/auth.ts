@@ -57,7 +57,11 @@ router.post("/signin", asyncMiddleware(async (req: express.Request, res: express
         firebaseToken: ""
     };
 
-    userByEmail.tokens.push(authToken);
+    if ( ! userByEmail.tokens ) {
+        userByEmail.tokens = [];
+    }
+
+    userByEmail.tokens = userByEmail.tokens.concat([authToken]);
 
     await userByEmail.save();
 

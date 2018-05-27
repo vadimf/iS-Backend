@@ -76,7 +76,11 @@ router.post("/signup", asyncMiddleware(async (req: express.Request, res: express
         firebaseToken: ""
     };
 
-    user.tokens.push(authToken);
+    if ( ! user.tokens ) {
+        user.tokens = [];
+    }
+
+    user.tokens = user.tokens.concat([authToken]);
 
     await user.save();
 
@@ -172,7 +176,11 @@ router.post("/signin", asyncMiddleware(async (req: express.Request, res: express
         firebaseToken: ""
     };
 
-    userByEmail.tokens.push(authToken);
+    if ( ! userByEmail.tokens ) {
+        userByEmail.tokens = [];
+    }
+
+    userByEmail.tokens = userByEmail.tokens.concat([authToken]);
 
     await userByEmail.save();
 

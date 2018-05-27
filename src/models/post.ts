@@ -20,8 +20,8 @@ export interface IPost extends mongoose.Document {
     parent?: IPost | mongoose.Types.ObjectId;
     tags?: String[];
 
-    viewers: mongoose.Types.Array<IUserModel>;
-    bookmarked: mongoose.Types.Array<IUserModel>;
+    viewers: IUserModel[] | mongoose.Types.ObjectId[];
+    bookmarked: IUserModel[] | mongoose.Types.ObjectId[];
     reports: IPostReport[];
 
     views: number;

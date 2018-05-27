@@ -53,7 +53,11 @@ async function authenticateUser(phoneNumber: IPhoneNumberModel, confirmationCode
         firebaseToken: ""
     };
 
-    user.tokens.push(authToken);
+    if ( ! user.tokens ) {
+        user.tokens = [];
+    }
+
+    user.tokens = user.tokens.concat([authToken]);
 
     await user.save();
 

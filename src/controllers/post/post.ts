@@ -1,5 +1,5 @@
 import * as express from "express";
-import { IPost, IVideo, Post, PostReportReason } from "../../models/post";
+import {IPost, IPostReport, IVideo, Post, PostReportReason} from "../../models/post";
 import { SystemConfiguration } from "../../models/system-vars";
 import { AppError } from "../../models/app-error";
 import { IUserModel, populateFollowing } from "../../models/user";
@@ -14,6 +14,7 @@ import { Utilities } from "../../utilities/utilities";
 import { Administrator } from "../../models/admin/administrator";
 import * as nodemailer from "nodemailer";
 import * as pug from "pug";
+import * as mongoose from "mongoose";
 // const getDuration = require("get-video-duration");
 const gifify = require("gifify");
 
@@ -75,7 +76,7 @@ async function getPostByIdOwnedByUser(id: string, user: IUserModel) {
 }
 
 function hasUserViewedPost(user: IUserModel, post: IPost) {
-    return post.viewers.some((view: any) => {
+    return (post.viewers as mongoose.Types.ObjectId[]).some((view: any) => {
         return view._id.equals(user._id);
     });
 }
@@ -89,7 +90,11 @@ function addViewToPost(post: IPost, user: IUserModel) {
         post.uniqueViews++;
     }
 
-    post.viewers.push(user._id);
+    if ( ! post.viewers ) {
+        post.viewers = [];
+    }
+
+    post.viewers = (post.viewers as mongoose.Types.ObjectId[]).concat([user._id]);
 
     if ( post.isModified() ) {
         post.save()
@@ -736,7 +741,11 @@ router
             throw AppError.ObjectExist;
         }
 
-        post.bookmarked.push(req.user._id);
+        if ( ! post.bookmarked ) {
+            post.bookmarked = [];
+        }
+
+        post.bookmarked = (post.bookmarked as mongoose.Types.ObjectId[]).concat([req.user._id]);
 
         if ( post.isModified() ) {
             post.save()
@@ -760,7 +769,13 @@ router
             throw AppError.ObjectDoesNotExist;
         }
 
-        post.bookmarked.pull(req.user._id);
+        if ( ! post.bookmarked ) {
+            post.bookmarked = [];
+        }
+
+        post.bookmarked = (post.bookmarked as mongoose.Types.ObjectId[]).filter((item: mongoose.Types.ObjectId) => {
+            return item.equals(req.user._id);
+        });
 
         if ( post.isModified() ) {
             post.save()
@@ -799,10 +814,12 @@ router.post("/:post/report", asyncMiddleware(async (req: express.Request, res: e
         post.reports = [];
     }
 
-    post.reports.push({
-        creator: req.user._id,
-        reason: reason
-    });
+    post.reports = post.reports.concat([
+        {
+            creator: req.user._id,
+            reason: reason
+        } as IPostReport
+    ]);
 
     await Promise.all([
         post.save(),

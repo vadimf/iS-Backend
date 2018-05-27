@@ -6,6 +6,7 @@ import { asyncMiddleware } from "../../server";
 import { getFollowsByConditions } from "./user";
 import { getPostsListByConditions } from "../post/post";
 import { CustomNotificationSender } from "../../utilities/custom-notification-sender";
+import {IPostReport} from "../../models/post";
 
 const router = express.Router({mergeParams: true});
 
@@ -87,10 +88,12 @@ router.post("/report", asyncMiddleware(async (req: express.Request, res: express
         user.reports = [];
     }
 
-    user.reports.push({
-        creator: req.user._id,
-        reason: reason
-    });
+    user.reports = user.reports.concat([
+        {
+            creator: req.user._id,
+            reason: reason
+        }
+    ]);
 
     res.response();
 

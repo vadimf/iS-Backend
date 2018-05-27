@@ -83,7 +83,11 @@ router.post("/", asyncMiddleware(async (req: express.Request, res: express.Respo
         firebaseToken: ""
     };
 
-    user.tokens.push(authToken);
+    if ( ! user.tokens ) {
+        user.tokens = [];
+    }
+
+    user.tokens = user.tokens.concat([authToken]);
 
     await user.save();
 
