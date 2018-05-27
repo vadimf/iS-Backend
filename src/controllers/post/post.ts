@@ -476,21 +476,17 @@ router
             .then(() => {})
             .catch(() => {});
 
+        await post.remove();
+
         if ( post.parent ) {
             const parentPostId = post.parent as mongoose.Types.ObjectId;
-
             const parentPost = await getPostById(parentPostId.toString());
 
             if ( parentPost ) {
                 parentPost.comments = await Post.count({parent: parentPostId});
-
-                console.log(parentPost.comments);
-
                 await parentPost.save();
             }
         }
-
-        await post.remove();
     }));
 
 
