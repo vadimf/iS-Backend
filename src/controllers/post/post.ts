@@ -482,7 +482,7 @@ router
             const parentPost = await getPostById(parentPostId.toString());
 
             if ( parentPost ) {
-                parentPost.comments--;
+                parentPost.comments = await Post.count({parent: parentPostId});
                 await parentPost.save();
             }
         }
