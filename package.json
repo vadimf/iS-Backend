@@ -61,6 +61,7 @@
     "express-flash": "^0.0.2",
     "express-validator": "^3.2.1",
     "facebookgraph": "^0.3.0",
+    "ffmpeg": "0.0.4",
     "file-type": "^7.4.0",
     "firebase-admin": "^5.5.1",
     "gifify": "^2.4.0",
