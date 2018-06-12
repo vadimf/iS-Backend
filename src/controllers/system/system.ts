@@ -71,7 +71,7 @@ router.get("/", (req: express.Request, res: express.Response) => {
         .on("end", (f: any) => {
             console.log("Processing finished !", f);
         })
-        .save("/home/maty/server/public/images/gif.gif");
+        .save("/home/maty/server/dist/public/images/gif.gif");
 });
 
 
