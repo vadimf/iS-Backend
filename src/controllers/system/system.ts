@@ -1,5 +1,8 @@
 import * as express from "express";
 import { SystemConfiguration } from "../../models/system-vars";
+import { Utilities } from "../../utilities/utilities";
+import { MimeType, StorageManager } from "../../utilities/storage-manager";
+import { WriteStreamOptions } from "google-cloud__storage";
 // import * as buffer from "buffer";
 // import { spawn } from "child_process";
 // const ffmpeg = require("ffmpeg");
@@ -60,6 +63,18 @@ router.get("/", (req: express.Request, res: express.Response) => {
     //     console.log("e", e);
     // }
 
+    const fileName = Utilities.randomStringArguments(32, true, true, true, false);
+
+    // const storageManager = new StorageManager();
+
+    const storageFile = StorageManager.getBucketFile(fileName);
+
+    const stream = storageFile.createWriteStream({
+        metadata: {
+            contentType: MimeType.IMAGE_GIF
+        }
+    });
+
     ffmpeg("https://storage.googleapis.com/isay-89efe.appspot.com/5aeed930ea4cea588815f465/zdsyvbp4_fgca7sg7n9e3lky.mp4")
         .format("gif")
         .size("320x?")
@@ -69,10 +84,11 @@ router.get("/", (req: express.Request, res: express.Response) => {
         .on("error", (err: any) => {
             console.log("An error occurred: " + err.message);
         })
-        .on("end", (f: any) => {
-            console.log("Processing finished !", f);
+        .on("end", async (f: any) => {
+            await storageFile.makePublic();
+            console.log("Processing finished !", StorageManager.getPublicUrl(fileName));
         })
-        .save("/home/maty/server/dist/public/images/gif.gif");
+        .output("/home/maty/server/dist/public/images/gif.gif");
 });
 
 

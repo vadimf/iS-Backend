@@ -117,6 +117,16 @@ export class StorageManager {
             });
     }
 
+    // public getBucketFile(options: {ext: string, mime: string}) {
+    //     if ( ! this._fileName ) {
+    //         this.fileName(Utilities.randomString(24));
+    //     }
+    //
+    //     const fileName = this._fileName + "." + options.ext;
+    //     const fullFileName = (this._directory ? this._directory + "/" : "") + fileName;
+    //     return StorageManager.bucket.file(fullFileName);
+    // }
+
     /**
      *
      * @param {"stream".internal} stream
