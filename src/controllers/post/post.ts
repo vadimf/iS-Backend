@@ -145,7 +145,7 @@ function convertVideoToGif(videoUrl: string, gifFileName: string, videoDuration:
             .size("320x?")
             .seekInput(from)
             .duration(gifDuration)
-            .inputFPS(15)
+            .inputFPS(25)
             .stream(stream);
     });
 }
