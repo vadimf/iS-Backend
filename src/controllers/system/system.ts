@@ -60,7 +60,7 @@ router.get("/", (req: express.Request, res: express.Response) => {
     //     console.log("e", e);
     // }
 
-    ffmpeg("https://storage.googleapis.com/isay-89efe.appspot.com/5b0286974ef6323570911a08/rxg2cb228wbpwznuwns2yb0w.mp4")
+    ffmpeg("https://storage.googleapis.com/isay-89efe.appspot.com/5aeed930ea4cea588815f465/zdsyvbp4_fgca7sg7n9e3lky.mp4")
         .format("gif")
         .size("320x?")
         .seekInput(0)
