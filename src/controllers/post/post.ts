@@ -142,9 +142,6 @@ function convertVideoToGif(videoUrl: string, gifFileName: string, videoDuration:
 
         ffmpeg(videoUrl)
             .format("gif")
-            .videoFilters([
-                "flags=lanczos,palettegen",
-            ])
             .size("320x?")
             .seekInput(from)
             .duration(gifDuration)
