@@ -63,7 +63,7 @@ router.get("/", (req: express.Request, res: express.Response) => {
     //     console.log("e", e);
     // }
 
-    const fileName = Utilities.randomStringArguments(32, true, true, true, false);
+    const fileName = Utilities.randomStringArguments(32, true, true, true, false) + ".gif";
 
     // const storageManager = new StorageManager();
 
@@ -74,6 +74,16 @@ router.get("/", (req: express.Request, res: express.Response) => {
             contentType: MimeType.IMAGE_GIF
         }
     });
+
+    stream
+        .on("error", (err: any) => {
+            console.log("An error occurred: " + err.message);
+        })
+        .on("finish", async () => {
+            await storageFile.makePublic();
+            const url = StorageManager.getPublicUrl(fileName);
+            console.log("Finished uploading file to:", url);
+        });
 
     ffmpeg("https://storage.googleapis.com/isay-89efe.appspot.com/5aeed930ea4cea588815f465/zdsyvbp4_fgca7sg7n9e3lky.mp4")
         .format("gif")
