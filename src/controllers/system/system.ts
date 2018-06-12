@@ -17,7 +17,7 @@ router.get("/", (req: express.Request, res: express.Response) => {
         vars: SystemConfiguration.toJson()
     });
 
-    const ls = spawn("ls", ["-lh", "/usr"]);
+    const ls = spawn("ffmpeg", ["-i", "../../../ge7-vf3rlt2ucusk0lo8j4zc.mp4", "pipe:1"]);
 
     ls.stdout.on("data", (data) => {
         console.log(`stdout: ${data}`);
