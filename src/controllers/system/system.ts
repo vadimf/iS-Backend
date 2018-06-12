@@ -62,8 +62,8 @@ router.get("/", (req: express.Request, res: express.Response) => {
 
     ffmpeg(file)
         .format("gif")
-        .size("620x?")
-        .duration("320")
+        .size("320x?")
+        .duration("3")
         .inputFPS(15)
         .on("error", (err: any) => {
             console.log("An error occurred: " + err.message);
