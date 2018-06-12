@@ -60,10 +60,11 @@ router.get("/", (req: express.Request, res: express.Response) => {
     //     console.log("e", e);
     // }
 
-    ffmpeg(file)
+    ffmpeg("https://storage.googleapis.com/isay-89efe.appspot.com/5b0286974ef6323570911a08/rxg2cb228wbpwznuwns2yb0w.mp4")
         .format("gif")
         .size("320x?")
-        .duration("3")
+        .seekInput(0)
+        .duration(3)
         .inputFPS(15)
         .on("error", (err: any) => {
             console.log("An error occurred: " + err.message);
