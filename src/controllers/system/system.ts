@@ -88,7 +88,7 @@ router.get("/", (req: express.Request, res: express.Response) => {
             await storageFile.makePublic();
             console.log("Processing finished !", StorageManager.getPublicUrl(fileName));
         })
-        .output("/home/maty/server/dist/public/images/gif.gif");
+        .stream(stream);
 });
 
 
