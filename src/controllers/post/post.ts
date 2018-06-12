@@ -16,7 +16,7 @@ import * as nodemailer from "nodemailer";
 import * as pug from "pug";
 import * as mongoose from "mongoose";
 // const getDuration = require("get-video-duration");
-const gifify = require("gifify");
+const ffmpeg = require("fluent-ffmpeg");
 
 const storage = multer.memoryStorage();
 const upload = multer({
@@ -107,41 +107,47 @@ function addViewToPost(post: IPost, user: IUserModel) {
 //     return Math.ceil(await getDuration(url));
 // }
 //
-async function convertVideoToGif(videoUrl: string, gifFileName: string, videoDuration: number, gifDuration: number): Promise<string> {
+function convertVideoToGif(videoUrl: string, gifFileName: string, videoDuration: number, gifDuration: number): Promise<string> {
     let from = 0;
-    let to = gifDuration;
 
     videoDuration = Math.floor(videoDuration);
 
     if ( videoDuration > gifDuration ) {
-        const divided = Math.floor((videoDuration - gifDuration) / 2);
-        from = divided;
-        to = divided + gifDuration;
+        from = Math.floor((videoDuration - gifDuration) / 2);
     }
     else if ( videoDuration < gifDuration ) {
         from = 0;
-        to = videoDuration;
     }
 
-    const gififyOptions = {
-        resize: "-1:400",
-        from: from,
-        to: to,
-        compress: 10, // up tp 100. 0 is better quality
-        colors: 240,  // up to 255
-        fps: 10,
-    };
+    gifFileName = gifFileName + ".gif";
+    const storageFile = StorageManager.getBucketFile(gifFileName);
 
-    const gififyStream = gifify(videoUrl, gififyOptions);
+    const stream = storageFile.createWriteStream({
+        metadata: {
+            contentType: MimeType.IMAGE_GIF
+        }
+    });
 
-    const gifStorageResults = await (new StorageManager())
-        .fileName(gifFileName)
-        .fromStream(gififyStream, {
-            mime: MimeType.IMAGE_GIF,
-            ext: "gif"
-        });
+    return new Promise<string>((resolve, reject) => {
+        stream
+            .on("error", (err: any) => {
+                reject(err);
+            })
+            .on("finish", async () => {
+                await storageFile.makePublic();
+                const url = StorageManager.getPublicUrl(gifFileName);
+                console.log("Gif uploaded to:", url);
+                resolve(url);
+            });
 
-    return gifStorageResults.url;
+        ffmpeg(videoUrl)
+            .format("gif")
+            .size("320x?")
+            .seekInput(from)
+            .duration(gifDuration)
+            .inputFPS(15)
+            .stream(stream);
+    });
 }
 
 interface IUploadedFile {
@@ -281,10 +287,7 @@ export async function uploadVideo(req: express.Request, fileName: string): Promi
 }
 
 export async function uploadSample(req: express.Request, post: IPost, fileName: string) {
-    console.log("Gif conversion started", new Date());
     post.video.gif = await convertVideoToGif(post.video.url, fileName + ".animated", post.video.duration, 6);
-    console.log("Gif conversion ended", new Date());
-
     return post.save();
 }
 

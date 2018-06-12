@@ -1,12 +1,12 @@
 import * as express from "express";
 import { SystemConfiguration } from "../../models/system-vars";
-import { Utilities } from "../../utilities/utilities";
-import { MimeType, StorageManager } from "../../utilities/storage-manager";
-import { WriteStreamOptions } from "google-cloud__storage";
+// import { Utilities } from "../../utilities/utilities";
+// import { MimeType, StorageManager } from "../../utilities/storage-manager";
+// import { WriteStreamOptions } from "google-cloud__storage";
 // import * as buffer from "buffer";
 // import { spawn } from "child_process";
 // const ffmpeg = require("ffmpeg");
-const ffmpeg = require("fluent-ffmpeg");
+// const ffmpeg = require("fluent-ffmpeg");
 
 
 
@@ -24,81 +24,35 @@ router.get("/", (req: express.Request, res: express.Response) => {
     res.response({
         vars: SystemConfiguration.toJson()
     });
-
-    const file = "/home/maty/server/ge7-vf3rlt2ucusk0lo8j4zc.mp4";
-
-    // const ls = spawn("ffmpeg", ["-i", "/home/maty/server/ge7-vf3rlt2ucusk0lo8j4zc.mp4", "pipe:1"]);
+    // const fileName = Utilities.randomStringArguments(32, true, true, true, false) + ".gif";
     //
-    // ls.stdout.on("data", (data) => {
-    //     console.log(`stdout: ${data}`);npm
+    // // const storageManager = new StorageManager();
+    //
+    // const storageFile = StorageManager.getBucketFile(fileName);
+    //
+    // const stream = storageFile.createWriteStream({
+    //     metadata: {
+    //         contentType: MimeType.IMAGE_GIF
+    //     }
     // });
     //
-    // ls.stderr.on("data", (data) => {
-    //     console.log(`stderr: ${data}`);
-    // });
-    //
-    // ls.on("close", (code) => {
-    //     console.log(`child process exited with code ${code}`);
-    // });
-
-    // try {
-    //     const process = new ffmpeg(file);
-    //     process.then((video: any) => {
-    //         // video
-    //         //     .format("gif")
-    //         //     .size("640x360")
-    //         //     .duration("0:15")
-    //         //     .inputFPS(8)
-    //         //     .save("/home/maty/server/dist/public/images/gif.gif", (error: any, file: any) => {
-    //         //         if ( ! error ) {
-    //         //             console.log("Video file: " + file);
-    //         //         }
-    //         //         console.log("save error", error);
-    //         //     });
-    //
-    //         console.log(video);
+    // stream
+    //     .on("error", (err: any) => {
+    //         console.log("An error occurred: " + err.message);
+    //     })
+    //     .on("finish", async () => {
+    //         await storageFile.makePublic();
+    //         const url = StorageManager.getPublicUrl(fileName);
+    //         console.log("Finished uploading file to:", url);
     //     });
-    // }
-    // catch (e) {
-    //     console.log("e", e);
-    // }
-
-    const fileName = Utilities.randomStringArguments(32, true, true, true, false) + ".gif";
-
-    // const storageManager = new StorageManager();
-
-    const storageFile = StorageManager.getBucketFile(fileName);
-
-    const stream = storageFile.createWriteStream({
-        metadata: {
-            contentType: MimeType.IMAGE_GIF
-        }
-    });
-
-    stream
-        .on("error", (err: any) => {
-            console.log("An error occurred: " + err.message);
-        })
-        .on("finish", async () => {
-            await storageFile.makePublic();
-            const url = StorageManager.getPublicUrl(fileName);
-            console.log("Finished uploading file to:", url);
-        });
-
-    ffmpeg("https://storage.googleapis.com/isay-89efe.appspot.com/5aeed930ea4cea588815f465/zdsyvbp4_fgca7sg7n9e3lky.mp4")
-        .format("gif")
-        .size("320x?")
-        .seekInput(0)
-        .duration(3)
-        .inputFPS(15)
-        .on("error", (err: any) => {
-            console.log("An error occurred: " + err.message);
-        })
-        .on("end", async (f: any) => {
-            await storageFile.makePublic();
-            console.log("Processing finished !", StorageManager.getPublicUrl(fileName));
-        })
-        .stream(stream);
+    //
+    // ffmpeg("https://storage.googleapis.com/isay-89efe.appspot.com/5aeed930ea4cea588815f465/zdsyvbp4_fgca7sg7n9e3lky.mp4")
+    //     .format("gif")
+    //     .size("320x?")
+    //     .seekInput(0)
+    //     .duration(3)
+    //     .inputFPS(15)
+    //     .stream(stream);
 });
 
 
