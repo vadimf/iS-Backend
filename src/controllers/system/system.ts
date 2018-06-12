@@ -39,17 +39,19 @@ router.get("/", (req: express.Request, res: express.Response) => {
     try {
         const process = new ffmpeg(file);
         process.then((video: any) => {
-            video
-                .format("gif")
-                .size("640x360")
-                .duration("0:15")
-                .inputFPS(8)
-                .save("/home/maty/server/dist/public/images/gif.gif", (error: any, file: any) => {
-                    if ( ! error ) {
-                        console.log("Video file: " + file);
-                    }
-                    console.log("save error", error);
-                });
+            // video
+            //     .format("gif")
+            //     .size("640x360")
+            //     .duration("0:15")
+            //     .inputFPS(8)
+            //     .save("/home/maty/server/dist/public/images/gif.gif", (error: any, file: any) => {
+            //         if ( ! error ) {
+            //             console.log("Video file: " + file);
+            //         }
+            //         console.log("save error", error);
+            //     });
+
+            console.log(video);
         });
     }
     catch (e) {
