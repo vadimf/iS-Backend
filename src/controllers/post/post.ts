@@ -1,5 +1,5 @@
 import * as express from "express";
-import { IPost, IPostReport, IVideo, Post, PostReportReason } from "../../models/post";
+import { IPost, IPostReport, IPostView, IVideo, IVideoDimensions, Post, PostReportReason } from "../../models/post";
 import { SystemConfiguration } from "../../models/system-vars";
 import { AppError } from "../../models/app-error";
 import { IUserModel, populateFollowing } from "../../models/user";
@@ -15,6 +15,7 @@ import { Administrator } from "../../models/admin/administrator";
 import * as nodemailer from "nodemailer";
 import * as pug from "pug";
 import * as mongoose from "mongoose";
+import * as moment from "moment";
 // const getDuration = require("get-video-duration");
 const ffmpeg = require("fluent-ffmpeg");
 
@@ -76,25 +77,26 @@ async function getPostByIdOwnedByUser(id: string, user: IUserModel) {
 }
 
 function hasUserViewedPost(user: IUserModel, post: IPost) {
-    return (post.viewers as mongoose.Types.ObjectId[]).some((view: any) => {
-        return view._id.equals(user._id);
-    });
+    post.currentUser = user;
+    return post.didView();
 }
 
 function addViewToPost(post: IPost, user: IUserModel) {
-    // if ( post.creator._id.equals(user._id) ) {
-    //     return;
-    // }
-
     if ( ! hasUserViewedPost(user, post) ) {
         post.uniqueViews++;
     }
 
     if ( ! post.viewers ) {
-        post.viewers = [];
+        post.viewers = [] as IPostView[];
     }
 
-    post.viewers = (post.viewers as mongoose.Types.ObjectId[]).concat([user._id]);
+    post.viewers = post.viewers.concat([
+        {
+            user: user._id
+        } as IPostView,
+    ]);
+
+    addDailyViewToPost(post, user);
 
     if ( post.isModified() ) {
         post.save()
@@ -103,10 +105,23 @@ function addViewToPost(post: IPost, user: IUserModel) {
     }
 }
 
-// async function getVideoDurationByUrl(url: string): Promise<number> {
-//     return Math.ceil(await getDuration(url));
-// }
-//
+function addDailyViewToPost(post: IPost, user: IUserModel) {
+    if ( post.viewers && post.viewers.length ) {
+        const existingView = post.viewers.find((view: IPostView) => {
+            const postViewerId = view.user as mongoose.Types.ObjectId;
+            return postViewerId.equals(user._id) && moment(view.createdAt).add(24, "hours").toDate().getTime() > Date.now();
+        });
+
+        if ( ! existingView ) {
+            if ( ! post.dailyViews ) {
+                post.dailyViews = 0;
+            }
+
+            post.dailyViews++;
+        }
+    }
+}
+
 function convertVideoToGif(videoUrl: string, gifFileName: string, videoDuration: number, gifDuration: number): Promise<string> {
     let from = 0;
 
@@ -245,7 +260,9 @@ export async function uploadVideo(req: express.Request, fileName: string): Promi
     const thumbnailFilesArray: IUploadedFile[] = (<any>req.files)["thumbnail"];
     const videoFile = videoFilesArray && videoFilesArray.length > 0 ? videoFilesArray[0] as IUploadedFile : null;
     const thumbnailFile = thumbnailFilesArray && thumbnailFilesArray.length > 0 ? thumbnailFilesArray[0] : null;
-    const duration: number = req.body.duration as number;
+    const duration = Number(req.body.duration || 0);
+    const height = Number(req.body.height || 0);
+    const width = Number(req.body.width || 0);
 
     req.setTimeout(0, null);
 
@@ -283,6 +300,10 @@ export async function uploadVideo(req: express.Request, fileName: string): Promi
         url: videoFilesUploadingPromises[1].url,
         thumbnail: videoFilesUploadingPromises[0].url,
         duration: duration,
+        dimensions: {
+            height: height,
+            width: width,
+        } as IVideoDimensions,
     } as IVideo;
 }
 
