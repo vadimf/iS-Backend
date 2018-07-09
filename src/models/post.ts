@@ -52,7 +52,7 @@ export interface IPostView extends mongoose.Document {
 export interface IVideoDimensions {
     height: number;
     width: number;
-    orientation: VideoOrientation;
+    getOrientation: () => VideoOrientation;
 }
 
 export interface IPostReport {
@@ -74,7 +74,7 @@ export const VideoDimensionsSchema = new mongoose.Schema(
     {
         height: Number,
         width: Number,
-    }
+    },
 );
 
 export const VideoSchema = new mongoose.Schema(
@@ -88,8 +88,7 @@ export const VideoSchema = new mongoose.Schema(
 );
 
 VideoDimensionsSchema
-    .virtual("orientation")
-    .get(function () {
+    .method("getOrientation", function () {
         if ( ! this.width && ! this.height ) {
             return VideoOrientation.Unknown;
         }
@@ -109,7 +108,7 @@ VideoDimensionsSchema.method("toJSON", function() {
     return {
         height: this.height || 0,
         width: this.width || 0,
-        orientation: this.orientation || VideoOrientation.Unknown,
+        orientation: this.getOrientation(),
     };
 });
 
