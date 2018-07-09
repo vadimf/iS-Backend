@@ -123,20 +123,61 @@ async function reformatPostFromObject(post: any, currentUser: IUserModel) {
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/following", asyncMiddleware(async (req: express.Request, res: express.Response) => {
-    const feedQueryConditions: any = {
-        "creator.blocked": {$ne: true},
-        "parent": null,
-        $or: [
+    const postsTmp = (
+        await feedQuery(
             {
-                "creator._id": req.user._id,
-            },
-            {
-                "creator.followersUsers.follower": req.user._id
+                "creator.blocked": {$ne: true},
+                "parent": null,
+                $or: [
+                    {
+                        "creator._id": req.user._id,
+                    },
+                    {
+                        "creator.followersUsers.follower": req.user._id
+                    }
+                ]
             }
-        ]
-    };
+            , [
+                {
+                    $sort: {
+                        uniqueViews: -1,
+                        comments: -1,
+                        createdAt: -1,
+                    }
+                },
+            ])
+    ).concat(
+        await feedQuery(
+            {
+                "creator.blocked": {$ne: true},
+                "parent": null,
+            }
+            , [
+                {
+                    $sort: {
+                        uniqueViews: -1,
+                        comments: -1,
+                        createdAt: -1,
+                    }
+                },
+            ])
+    );
 
-    await getPostsByConditions(feedQueryConditions, req, res);
+    const posts: IPost[] = [];
+    for (const post of postsTmp) {
+        const postObj = await reformatPostFromObject(post, req.user);
+        posts.push(postObj);
+    }
+
+    await populateFollowing(posts, req.user, "creator");
+
+    const page: number = Number(req.query.page);
+    const pagination = new Pagination(page, posts.length);
+
+    res.response({
+        posts: pagination.paginateManually(posts),
+        pagination: pagination
+    });
 }));
 
 router.get("/popular", asyncMiddleware(async (req: express.Request, res: express.Response) => {

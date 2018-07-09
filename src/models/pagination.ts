@@ -1,17 +1,12 @@
 export class Pagination {
-    private _page: number = 1;
-    private _results: number = 0;
-    private _resultsPerPage: number = 50;
+    constructor(private _page: number = 1, private _results: number = 0, private _resultsPerPage: number = 25) {}
 
-
-    constructor(page: number, results: number, resultsPerPage: number = 25) {
-        this._page = page;
-        this._results = results;
-        this._resultsPerPage = resultsPerPage;
+    get disabled(): boolean {
+        return this._page < 0;
     }
 
     get page(): number {
-        if ( ! this._page || this._page < 1 ) {
+        if ( ! this._page ) {
             return 1;
         }
 
@@ -39,7 +34,7 @@ export class Pagination {
             return 0;
         }
 
-        if ( this.page == this.pages ) {
+        if ( this.page === this.pages ) {
             return this.results - (this.resultsPerPage * (this.pages - 1));
         }
 
@@ -51,14 +46,35 @@ export class Pagination {
         return this.resultsPerPage * currentPage;
     }
 
+    public paginateManually(items: any[]): any[] {
+        if ( this.disabled ) {
+            return items;
+        }
+
+        const returnItems: any[] = [];
+        this._results = items.length;
+
+        for ( let i = this.offset; i <= this.offset + this.resultsPerPage - 1 && i < this.results; i++ ) {
+            if ( items[i] ) {
+                returnItems.push(items[i]);
+            }
+        }
+
+        return returnItems;
+    }
+
     public toJSON() {
+        if ( this.disabled ) {
+            return undefined;
+        }
+
         return {
             page: this.page,
             pages: this.pages,
             results: this.results,
             resultsPerPage: this.resultsPerPage,
             resultsCurrentPage: this.resultsCurrentPage,
-            offset: this.offset
+            offset: this.offset,
         };
     }
 }

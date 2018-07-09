@@ -24,7 +24,6 @@ export interface IPost extends mongoose.Document {
     bookmarked: IUserModel[] | mongoose.Types.ObjectId[];
     reports: IPostReport[];
 
-    views: number;
     uniqueViews: number;
     dailyViews: number;
     comments: number;
