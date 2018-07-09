@@ -284,6 +284,7 @@ VideoSchema.methods.toJSON = function() {
         thumbnail: this.thumbnail || null,
         gif: this.gif || null,
         duration: this.duration || 0,
+        dimensions: this.dimensions || null,
     };
 };
 
