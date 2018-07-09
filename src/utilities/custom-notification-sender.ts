@@ -23,7 +23,7 @@ export class CustomNotificationSender extends NotificationSender {
             super(CustomNotificationSender._getTokensFromUser(user));
         }
 
-        this.title("iSay");
+        this.title(process.env.APP_NAME);
     }
 
     private static _getTokensFromUser(user: IUserModel): string[] {
