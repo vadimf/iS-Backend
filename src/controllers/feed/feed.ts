@@ -145,9 +145,9 @@ router.get("/popular", asyncMiddleware(async (req: express.Request, res: express
         req,
         res,
         {
-            createdAt: -1,
+            uniqueViews: -1,
             comments: -1,
-            uniqueViews: -1
+            createdAt: -1,
         },
     );
 }));
