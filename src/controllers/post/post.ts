@@ -654,20 +654,7 @@ router.post("/:post/comment", upload.fields([{name: "video", maxCount: 1}, {name
             post.comments = await countPostComments(post._id.toString());
             await post.save();
 
-            // const mentionedUsernames = getUsernameMentionsByText(text);
-            //
-            // if (mentionedUsernames.length) {
-            //     const mentionedUsers = await User.find({
-            //         username: {$in: mentionedUsernames},
-            //         _id: {$ne: post.creator._id}
-            //     });
-            //
-            //     if (mentionedUsers.length) {
-            //         await sendCommentMentionsNotification(mentionedUsers, req.user, comment);
-            //     }
-            // }
-
-            if ( ! (post.creator as IUserModel)._id.isEqual(req.user._id) ) {
+            if ( ! (post.creator as IUserModel)._id.equals(req.user._id) ) {
                 await sendNewCommentNotification(post.creator, req.user, comment);
             }
         })
