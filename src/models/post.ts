@@ -107,9 +107,9 @@ VideoDimensionsSchema
 
 VideoDimensionsSchema.method("toJSON", function() {
     return {
-        height: this.height,
-        width: this.width,
-        orientation: this.orientation,
+        height: this.height || 0,
+        width: this.width || 0,
+        orientation: this.orientation || VideoOrientation.Unknown,
     };
 });
 
