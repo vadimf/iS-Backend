@@ -106,19 +106,19 @@ function addViewToPost(post: IPost, user: IUserModel) {
 }
 
 function addDailyViewToPost(post: IPost, user: IUserModel) {
-    if ( post.viewers && post.viewers.length ) {
-        const existingView = post.viewers.find((view: IPostView) => {
+    const existingView = post.viewers && post.viewers.length ?
+        post.viewers.find((view: IPostView) => {
             const postViewerId = view.user as mongoose.Types.ObjectId;
             return postViewerId.equals(user._id) && moment(view.createdAt).add(24, "hours").toDate().getTime() > Date.now();
-        });
+        }) :
+        null;
 
-        if ( ! existingView ) {
-            if ( ! post.dailyViews ) {
-                post.dailyViews = 0;
-            }
-
-            post.dailyViews++;
+    if ( ! existingView ) {
+        if ( ! post.dailyViews ) {
+            post.dailyViews = 0;
         }
+
+        post.dailyViews++;
     }
 }
 
