@@ -140,8 +140,8 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
             , [
                 {
                     $sort: {
-                        uniqueViews: -1,
-                        comments: -1,
+                        // uniqueViews: -1,
+                        // comments: -1,
                         createdAt: -1,
                     }
                 },
