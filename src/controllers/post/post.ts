@@ -90,13 +90,13 @@ function addViewToPost(post: IPost, user: IUserModel) {
         post.viewers = [] as IPostView[];
     }
 
+    addDailyViewToPost(post, user);
+
     post.viewers = post.viewers.concat([
         {
             user: user._id
         } as IPostView,
     ]);
-
-    addDailyViewToPost(post, user);
 
     if ( post.isModified() ) {
         post.save()
