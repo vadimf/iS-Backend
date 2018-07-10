@@ -157,7 +157,17 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
             },
         ]);
 
-    const postsTmp = followingPosts.concat(popularPosts);
+    const postsTmp: Object[] = [];
+    const distinctPostIds: string[] = [];
+
+    followingPosts.concat(popularPosts).forEach((postItem: any) => {
+        const postId = postItem._id.toString();
+
+        if ( ! distinctPostIds.hasItem(postId) ) {
+            postsTmp.push(postItem);
+            distinctPostIds.push(postId);
+        }
+    });
 
     const posts: IPost[] = [];
     for (const post of postsTmp) {
