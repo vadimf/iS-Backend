@@ -123,45 +123,41 @@ async function reformatPostFromObject(post: any, currentUser: IUserModel) {
  * @apiSuccess {int}                pagination.offset Start offset
  */
 router.get("/following", asyncMiddleware(async (req: express.Request, res: express.Response) => {
-    const postsTmp = (
-        await feedQuery(
-            {
-                "creator.blocked": {$ne: true},
-                "parent": null,
-                $or: [
-                    {
-                        "creator._id": req.user._id,
-                    },
-                    {
-                        "creator.followersUsers.follower": req.user._id
-                    }
-                ]
-            }
-            , [
+    const followingPosts = await feedQuery({
+            "creator.blocked": {$ne: true},
+            "parent": null,
+            $or: [
                 {
-                    $sort: {
-                        // uniqueViews: -1,
-                        // comments: -1,
-                        createdAt: -1,
-                    }
+                    "creator._id": req.user._id,
                 },
-            ])
-    ).concat(
-        await feedQuery(
-            {
-                "creator.blocked": {$ne: true},
-                "parent": null,
-            }
-            , [
                 {
-                    $sort: {
-                        uniqueViews: -1,
-                        comments: -1,
-                        createdAt: -1,
-                    }
-                },
-            ])
-    );
+                    "creator.followersUsers.follower": req.user._id
+                }
+            ]
+        },
+        [
+            {
+                $sort: {
+                    createdAt: -1,
+                }
+            },
+        ]);
+
+    const popularPosts = await feedQuery({
+            "creator.blocked": {$ne: true},
+            "parent": null,
+        },
+        [
+            {
+                $sort: {
+                    uniqueViews: -1,
+                    comments: -1,
+                    createdAt: -1,
+                }
+            },
+        ]);
+
+    const postsTmp = followingPosts.concat(popularPosts);
 
     const posts: IPost[] = [];
     for (const post of postsTmp) {
@@ -176,7 +172,8 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
 
     res.response({
         posts: pagination.paginateManually(posts),
-        pagination: pagination
+        pagination: pagination,
+        followingPostsExisting: !!followingPosts,
     });
 }));
 
