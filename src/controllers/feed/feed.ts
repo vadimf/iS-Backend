@@ -173,7 +173,7 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
     res.response({
         posts: pagination.paginateManually(posts),
         pagination: pagination,
-        followingPostsExisting: !!followingPosts,
+        followingPostsExists: !!followingPosts,
     });
 }));
 
