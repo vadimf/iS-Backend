@@ -150,30 +150,26 @@ router.get("/following", asyncMiddleware(async (req: express.Request, res: expre
         [
             {
                 $sort: {
-                    uniqueViews: -1,
+                    dailyViews: -1,
                     comments: -1,
                     createdAt: -1,
                 }
             },
         ]);
-
-    const postsTmp: Object[] = [];
     const distinctPostIds: string[] = [];
 
-    followingPosts.concat(popularPosts).forEach((postItem: any) => {
-        const postId = postItem._id.toString();
+    const postsPromises: Array<Promise<IPost>> = [];
+    for ( const post of followingPosts.concat(popularPosts) ) {
+        const postId = (post as any)._id.toString();
 
         if ( ! distinctPostIds.hasItem(postId) ) {
-            postsTmp.push(postItem);
             distinctPostIds.push(postId);
-        }
-    });
 
-    const posts: IPost[] = [];
-    for (const post of postsTmp) {
-        const postObj = await reformatPostFromObject(post, req.user);
-        posts.push(postObj);
+            postsPromises.push(reformatPostFromObject(post, req.user));
+        }
     }
+
+    const posts: IPost[] = await Promise.all(postsPromises);
 
     await populateFollowing(posts, req.user, "creator");
 
@@ -193,7 +189,7 @@ router.get("/popular", asyncMiddleware(async (req: express.Request, res: express
         req,
         res,
         {
-            uniqueViews: -1,
+            dailyViews: -1,
             comments: -1,
             createdAt: -1,
         },
