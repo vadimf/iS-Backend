@@ -112,13 +112,20 @@ router.get("/posts", asyncMiddleware(async (req: express.Request, res: express.R
  */
 router.get("/users", asyncMiddleware(async (req: express.Request, res: express.Response) => {
     const searchQuery: string = req.query.query;
-    const searchRegex = searchQuery.searchToRegex();
+    const searchRegex = searchQuery.toLowerCase().searchToRegex();
     const page: number = +req.query.page;
 
     const conditions = {
         _id: {$ne: req.user._id},
         blocked: {$ne: true},
-        username: searchRegex
+        $or: [
+            {
+                username: searchRegex,
+            },
+            {
+                "profile.fullNames": searchRegex
+            }
+        ],
     };
 
     const totalResults = await User.count(conditions);

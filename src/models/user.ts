@@ -9,7 +9,9 @@ import * as dateformat from "dateformat";
 
 export interface IUserProfileModel {
     firstName: string;
-    lastName: string;
+    lastName: string
+    fullNames: string[];
+
     picture: IUserPicture;
     bio: string;
     website: string;
@@ -19,6 +21,7 @@ export const ProfileSchema = new mongoose.Schema(
     {
         firstName: String,
         lastName: String,
+        fullNames: [String],
         picture: {
             type: UserPictureSchema
         },
@@ -26,13 +29,6 @@ export const ProfileSchema = new mongoose.Schema(
         website: String,
         birthday: Date
     },
-    // {
-    //     toJSON: {
-    //         transform: function (doc: any, ret: any) {
-    //             delete ret._id;
-    //         }
-    //     }
-    // }
 );
 ProfileSchema.methods.toJSON = function() {
     return {
@@ -44,6 +40,20 @@ ProfileSchema.methods.toJSON = function() {
         birthday: this.birthday ? dateformat(this.birthday, "yyyy-mm-dd") : ""
     };
 };
+ProfileSchema.pre("save", function(next) {
+    if ( ! this.firstName || ! this.lastName ) {
+        this.fullNames = [];
+    }
+
+    this.fullNames = [
+        (this.firstName + " " + this.lastName).toLowerCase(),
+        (this.firstName + ", " + this.lastName).toLowerCase(),
+        (this.lastName + " " + this.firstName).toLowerCase(),
+        (this.lastName + ", " + this.firstName).toLowerCase(),
+    ];
+
+    next();
+});
 
 export interface IAuthTokenModel {
     authToken: string;
