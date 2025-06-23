@@ -1,3 +1,84 @@
+# Backend Server for P2P Communication App – TypeScript API
+
+This repository contains the backend server for a decentralized **peer-to-peer communication app**, developed by **Globalbit**.  
+The backend is written in **TypeScript** using Node.js and is designed to support optional cloud synchronization, fallback messaging, device authentication, and secure data storage for mobile clients in critical environments.
+
+---
+
+## 🧠 Purpose
+
+While the core communication layer is peer-to-peer (P2P), this backend enables:
+- 🔁 **Optional message sync & persistence**
+- 🔐 **Device authentication & key management**
+- 🧾 **Audit logging and message history**
+- 📢 **Push/broadcast messaging**
+- 🛠️ **Device config & user profile management**
+
+This setup is ideal for hybrid deployments that require both offline P2P and secure cloud coordination.
+
+---
+
+## 🧰 Tech Stack
+
+- **Language**: TypeScript (Node.js)
+- **Framework**: Express or Fastify
+- **Authentication**: JWT, OAuth2, PKI-based device auth
+- **Database**: PostgreSQL / MongoDB
+- **Cache & Queue**: Redis / BullMQ
+- **Messaging**: WebSockets, REST, optional MQTT
+- **Deployment**: Docker, Kubernetes, CI/CD via GitHub Actions
+
+---
+
+## 🛡️ Security & Reliability
+
+- AES-256 + RSA for encrypted message handling
+- Rate limiting, IP filtering, and device whitelisting
+- TLS for all API endpoints
+- Configurable retention and GDPR-compliant deletion
+
+---
+
+## 📂 Key Modules
+
+- `/routes` – API endpoints for auth, messages, users
+- `/controllers` – Business logic for message routing & storage
+- `/services` – Encryption, device sync, push adapters
+- `/db` – ORM models and schema
+- `/sockets` – WebSocket gateway for real-time comms
+
+---
+
+## 🧩 Real-World Applications
+
+- Emergency P2P communications with cloud fallback
+- Military-grade hybrid messaging platforms
+- Industrial IoT coordination with field agents
+- Smart transit apps with offline broadcast capability
+
+---
+
+## 🏗 Built by Globalbit
+
+**Globalbit** is a leading Israeli software firm building secure, high-availability backend systems for mobile and mission-critical environments.  
+Our platforms serve **200M+ users** across industries including:
+
+- 🛡️ Defense & Homeland Security
+- 🚑 Emergency Services & Mobility
+- 🏥 Healthcare & Critical Infrastructure
+- 🛠️ Industrial Monitoring & IoT
+
+---
+
+## 📎 Getting Started
+
+```bash
+git clone https://github.com/globalbit/p2p-backend
+cd p2p-backend
+cp .env.example .env
+npm install
+npm run dev
+
 # TypeScript Node Starter
 
 [![Dependency Status](https://david-dm.org/Microsoft/TypeScript-Node-Starter.svg)](https://david-dm.org/Microsoft/TypeScript-Node-Starter) [![Build Status](https://travis-ci.org/Microsoft/TypeScript-Node-Starter.svg?branch=master)](https://travis-ci.org/Microsoft/TypeScript-Node-Starter) 
@@ -415,3 +496,8 @@ Here is a section of miscellaneous tips.
 
 # Hackathon Starter Project
 A majority of this quick start's content was inspired or adapted from Sahat's excellent [Hackathon Starter project](https://github.com/sahat/hackathon-starter).
+
+Globalbit builds robust mobile platforms for challenging environments — from public safety to connected mobility.
+
+📩 [info@globalbit.co.il](mailto:info@globalbit.co.il)  
+🌐 [globalbit.co.il](https://globalbit.co.il)
